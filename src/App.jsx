@@ -1,15 +1,16 @@
 import PawLogo from "./components/PawLogo";
+import OrangeBackground from "./components/OrangeBackground";
 
 export default function App() {
   return (
-    <>
-      <main className="min-h-screen bg-white flex flex-col items-center justify-center gap-10">
-        <h1>
-          <PawLogo size="lg" />
-        </h1>
-        <PawLogo size="md" />
-        <PawLogo size="sm" />
+    <OrangeBackground>
+      <main className="mx-auto max-w-3xl px-6 py-16">
+        <div className="flex justify-center rounded-card bg-white p-10">
+          <h1>
+            <PawLogo size="lg" />
+          </h1>
+        </div>
       </main>
-    </>
-  );
+    </OrangeBackground>
+  )
 }
