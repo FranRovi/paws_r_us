@@ -1,12 +1,14 @@
+import PawLogo from "./components/PawLogo";
+
 export default function App() {
   return (
     <>
-      <main className="min-h-screen bg-brand flex items-center justify-center">
-        <h1 className="font-logo text-7xl text-ink">
-          Paws <span className="text-brown text-4xl">R Us</span>
+      <main className="min-h-screen bg-white flex flex-col items-center justify-center gap-10">
+        <h1>
+          <PawLogo size="lg" />
         </h1>
-        <br />
-        <h2>Site under construction</h2>
+        <PawLogo size="md" />
+        <PawLogo size="sm" />
       </main>
     </>
   );
