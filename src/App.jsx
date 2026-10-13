@@ -4,6 +4,7 @@ export default function App() {
       <h1 className="font-logo text-7xl text-ink">
         Paws <span className="text-brown text-4xl">R Us</span>
       </h1>
+      <h2>Site under construction</h2>
     </main>
   )
 }
