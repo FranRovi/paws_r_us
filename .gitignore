@@ -1,0 +1,117 @@
+# ==========================================
+# Operating System Files
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.Trashes
+VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+*.local
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================================
+# IDEs and Text Editors
+# ==========================================
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+.history/
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# JetBrains (IntelliJ, WebStorm, PyCharm, etc.)
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Developer Logs & Crash Reports
+*.log
+*.log.*
+*.crash
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Packages and Dependencies (Language Specific)
+# ==========================================
+# Node.js / JavaScript
+node_modules/
+jspm_packages/
+.npm
+.eslintcache
+.parcel-cache
+.next/
+.nuxt/
+dist
+dist-ssr
+/out/
+
+
+# ==========================================
+# Environment Variables & Secrets (NEVER COMMMIT)
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.secret
+# Stray key/secret files (added before first public deploy)
+.anon_service__role_key
+*role_key*
+.env.*
+!.env.example
+
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# Netlify CLI link
+.netlify/
+
+# Test output (Vitest / Playwright)
+coverage/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
