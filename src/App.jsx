@@ -8,18 +8,21 @@ export default function App() {
   )
 }
 
-
-// import { useState } from 'react'
-// import heroImg from './assets/hero.png'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import './App.css'
+// import { useState } from "react";
+// import heroImg from "./assets/hero.png";
+// import reactLogo from "./assets/react.svg";
+// import viteLogo from "./assets/vite.svg";
 
 // function App() {
-//   const [count, setCount] = useState(0)
+//   const [count, setCount] = useState(0);
 
 //   return (
 //     <>
+//       <main className="min-h-screen bg-brand flex items-center justify-center">
+//         <h1 className="font-logo text-7xl text-ink">
+//           Paws <span className="text-brown text-4xl">R Us</span>
+//         </h1>
+//       </main>
 //       <section id="center">
 //         <div className="hero">
 //           <img src={heroImg} className="base" width="170" height="179" alt="" />
@@ -128,7 +131,7 @@ export default function App() {
 //       <div className="ticks"></div>
 //       <section id="spacer"></section>
 //     </>
-//   )
+//   );
 // }
 
-// export default App
+// export default App;

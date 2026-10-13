@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #FF8C21;
-  --color-ink: #2B1A0C;
-  --color-text: #1A1A1A;
-  --color-muted: #5B5348;
-  --color-brown: #6B4423;
-  --color-paw: #E8C49A;
-  --color-cream: #FFF6EA;
-  --color-field: #EDEDED;
+  --color-brand: #ff8c21;
+  --color-ink: #2b1a0c;
+  --color-text: #1a1a1a;
+  --color-muted: #5b5348;
+  --color-brown: #6b4423;
+  --color-paw: #e8c49a;
+  --color-cream: #fff6ea;
+  --color-field: #ededed;
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-logo: "Fredoka", "Inter", sans-serif;
@@ -19,7 +19,7 @@
 
 body {
   margin: 0;
-  background: #FFFFFF;
+  background: #ffffff;
   color: var(--color-text);
   font-family: var(--font-sans);
 }
