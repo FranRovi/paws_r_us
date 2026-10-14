@@ -1,12 +1,56 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import PawLogo from '../components/PawLogo'
 import TextField from '../components/TextField'
 import SelectField from '../components/SelectField'
+import { validateRegister } from '../lib/validation'
 
 const COUNTRIES = ['United States', 'Canada', 'Argentina']
 
+const INITIAL_VALUES = {
+  firstName: '',
+  lastName: '',
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  address: '',
+  city: '',
+  zip: '',
+  country: 'United States',
+  terms: false,
+}
+
 export default function Register() {
+  const [values, setValues] = useState(INITIAL_VALUES)
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+
+  function handleChange(event) {
+    const { name, type, value, checked } = event.target
+    const next = { ...values, [name]: type === 'checkbox' ? checked : value }
+    setValues(next)
+    if (submitted) setErrors(validateRegister(next))
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    const found = validateRegister(values)
+    setErrors(found)
+    setSubmitted(true)
+    if (Object.keys(found).length > 0) return
+
+    console.log('valid form', values) // temporary, step 6c replaces this
+  }
+
+  const field = (name) => ({
+    name,
+    value: values[name],
+    onChange: handleChange,
+    error: errors[name],
+  })
+
   return (
     <AuthLayout className="max-w-[720px]">
       <div className="flex flex-col gap-7">
@@ -15,23 +59,23 @@ export default function Register() {
         </div>
         <h1 className="text-center text-3xl font-extrabold tracking-tight">Create account</h1>
 
-        <form className="flex flex-col gap-6" noValidate>
+        <form className="flex flex-col gap-6" noValidate onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="First name" name="firstName" autoComplete="given-name" />
-            <TextField label="Last name" name="lastName" autoComplete="family-name" />
-            <TextField label="Username" name="username" autoComplete="username" />
-            <TextField label="Email" name="email" type="email" autoComplete="email" />
+            <TextField label="First name" autoComplete="given-name" {...field('firstName')} />
+            <TextField label="Last name" autoComplete="family-name" {...field('lastName')} />
+            <TextField label="Username" autoComplete="username" {...field('username')} />
+            <TextField label="Email" type="email" autoComplete="email" {...field('email')} />
             <TextField
               label="Password"
-              name="password"
               type="password"
               autoComplete="new-password"
+              {...field('password')}
             />
             <TextField
               label="Confirm password"
-              name="confirmPassword"
               type="password"
               autoComplete="new-password"
+              {...field('confirmPassword')}
             />
           </div>
 
@@ -46,24 +90,38 @@ export default function Register() {
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
                 label="Address"
-                name="address"
                 autoComplete="street-address"
                 className="sm:col-span-2"
+                {...field('address')}
               />
-              <TextField label="City" name="city" autoComplete="address-level2" />
-              <TextField label="Zip code" name="zip" autoComplete="postal-code" />
+              <TextField label="City" autoComplete="address-level2" {...field('city')} />
+              <TextField label="Zip code" autoComplete="postal-code" {...field('zip')} />
               <SelectField
                 label="Country"
-                name="country"
                 options={COUNTRIES}
                 className="sm:col-span-2"
+                name="country"
+                value={values.country}
+                onChange={handleChange}
               />
             </div>
           </fieldset>
 
-          <label className="flex min-h-11 items-center gap-3.5 text-base">
-            <input type="checkbox" name="terms" className="h-5 w-5 accent-brand" />I agree to the terms of use
-          </label>
+          <div className="flex flex-col gap-1">
+            <label className="flex min-h-11 items-center gap-3.5 text-base">
+              <input
+                type="checkbox"
+                name="terms"
+                checked={values.terms}
+                onChange={handleChange}
+                className="h-5 w-5 accent-brand"
+              />
+              I agree to the terms of use
+            </label>
+            {errors.terms && (
+              <p className="text-sm font-semibold text-red-700">{errors.terms}</p>
+            )}
+          </div>
 
           <button
             type="submit"
