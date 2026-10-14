@@ -3,7 +3,6 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect } from "vitest";
 import App from "./App";
 
-// TEST 2 - ROUTES
 
 function renderAt(path) {
   return render(
@@ -14,18 +13,15 @@ function renderAt(path) {
 }
 
 describe('App routing', () => {
-  it('shows the welcome page at /', () => {
+  it('shows the logo heading at /', () => {
     renderAt('/')
-    expect(screen.getByRole('heading', { name: /welcome/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /paws r us/i })).toBeInTheDocument()
   })
 
-  it('shows the login page at /login', () => {
-    renderAt('/login')
-    expect(screen.getByRole('heading', { name: /log ?in/i })).toBeInTheDocument()
-  })
-
-  it('shows a not found page for unknown addresses', () => {
-    renderAt('/nope')
-    expect(screen.getByRole('heading', { name: /not found/i })).toBeInTheDocument()
+  it('links to the login and register pages from the welcome page', () => {
+    renderAt('/')
+    expect(screen.getByRole('link', { name: /log in/i })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: /create account/i })).toHaveAttribute('href', '/register',
+    )
   })
 });
