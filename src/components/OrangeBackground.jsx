@@ -1,6 +1,8 @@
-export default function OrangeBackground({ children, className = '' }) {
+export default function OrangeBackground({ children, className = "" }) {
   return (
-    <div className={`relative min-h-screen overflow-hidden bg-brand text-text ${className}`}>
+    <div
+      className={`relative min-h-screen overflow-hidden bg-brand text-text ${className}`}
+    >
       <div
         aria-hidden="true"
         className="absolute -right-40 -top-60 h-[560px] w-[560px] rounded-full bg-white/15"
@@ -11,5 +13,5 @@ export default function OrangeBackground({ children, className = '' }) {
       />
       <div className="relative">{children}</div>
     </div>
-  )
+  );
 }

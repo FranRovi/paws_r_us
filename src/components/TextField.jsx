@@ -1,8 +1,13 @@
-import { useId } from 'react'
+import { useId } from "react";
 
-export default function TextField({ label, error, className = '', ...inputProps }) {
-  const id = useId()
-  const errorId = `${id}-error`
+export default function TextField({
+  label,
+  error,
+  className = "",
+  ...inputProps
+}) {
+  const id = useId();
+  const errorId = `${id}-error`;
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
@@ -11,10 +16,10 @@ export default function TextField({ label, error, className = '', ...inputProps 
       </label>
       <input
         id={id}
-        aria-invalid={error ? 'true' : undefined}
+        aria-invalid={error ? "true" : undefined}
         aria-describedby={error ? errorId : undefined}
         className={`h-14 min-w-0 rounded-[14px] border-2 bg-field px-[18px] text-base focus:border-ink focus:outline-none ${
-          error ? 'border-red-700' : 'border-field'
+          error ? "border-red-700" : "border-field"
         }`}
         {...inputProps}
       />
@@ -24,5 +29,5 @@ export default function TextField({ label, error, className = '', ...inputProps 
         </p>
       )}
     </div>
-  )
+  );
 }

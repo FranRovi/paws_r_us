@@ -1,7 +1,12 @@
-import { useId } from 'react'
+import { useId } from "react";
 
-export default function SelectField({ label, options, className = '', ...selectProps }) {
-  const id = useId()
+export default function SelectField({
+  label,
+  options,
+  className = "",
+  ...selectProps
+}) {
+  const id = useId();
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
@@ -20,5 +25,5 @@ export default function SelectField({ label, options, className = '', ...selectP
         ))}
       </select>
     </div>
-  )
+  );
 }
