@@ -13,15 +13,10 @@ function renderAt(path) {
 }
 
 describe('App routing', () => {
-  it('shows the logo heading at /', () => {
-    renderAt('/')
-    expect(screen.getByRole('heading', { name: /paws r us/i })).toBeInTheDocument()
-  })
-
-  it('links to the login and register pages from the welcome page', () => {
-    renderAt('/')
-    expect(screen.getByRole('link', { name: /log in/i })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: /create account/i })).toHaveAttribute('href', '/register',
-    )
+  it('shows the registration form at /register', () => {
+    renderAt('/register')
+    expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
   })
 });
