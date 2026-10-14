@@ -1,23 +1,31 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
+import { useAuth } from "./hooks/useAuth";
 
-vi.mock('./hooks/useAuth', () => ({
-  useAuth: () => ({
-    user: null,
-    loading: false,
-    signUp: vi.fn(),
-    signIn: vi.fn(),
-  }),
-}))
+vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
+
+const loggedOut = {
+  user: null,
+  loading: false,
+  signUp: vi.fn(),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+};
+const loggedIn = { ...loggedOut, user: { email: "me@example.com" } };
+
+beforeEach(() => {
+  useAuth.mockReturnValue(loggedOut);
+});
+
 function renderAt(path) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>,
   );
-};
+}
 describe("App routing", () => {
   it("shows the registration form at /register", () => {
     renderAt("/register");
@@ -45,5 +53,34 @@ describe("App routing", () => {
       screen.getByText(/enter a valid email address/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/enter your password/i)).toBeInTheDocument();
+  });
+  it("sends a logged-out visitor from /explore to the login page", () => {
+    renderAt("/explore");
+    expect(
+      screen.getByRole("heading", { name: /log in/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows /explore to a logged-in user", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+    expect(
+      screen.getByRole("heading", { name: /explore/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/me@example.com/i)).toBeInTheDocument();
+  });
+
+  it("sends a logged-in user away from /login", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/login");
+    expect(
+      screen.getByRole("heading", { name: /explore/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a loading screen while the session is being restored", () => {
+    useAuth.mockReturnValue({ ...loggedOut, loading: true });
+    renderAt("/explore");
+    expect(screen.getByRole("status")).toHaveTextContent(/loading/i);
   });
 });
