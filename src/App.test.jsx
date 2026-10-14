@@ -12,6 +12,10 @@ function renderAt(path) {
   )
 }
 
+vi.mock('./hooks/useAuth', () => ({
+  useAuth: () => ({ user: null, loading: false, signUp: vi.fn() }),
+}))
+
 describe('App routing', () => {
   it('shows the registration form at /register', () => {
     renderAt('/register')
@@ -26,4 +30,6 @@ describe('App routing', () => {
     expect(screen.getByText('Enter your first name.')).toBeInTheDocument()
     expect(screen.getByText('You need to accept the terms to continue.')).toBeInTheDocument()
   })
+  
+
 });

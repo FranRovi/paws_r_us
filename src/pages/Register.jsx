@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import PawLogo from '../components/PawLogo'
 import TextField from '../components/TextField'
 import SelectField from '../components/SelectField'
 import { validateRegister } from '../lib/validation'
+import { useAuth } from '../hooks/useAuth'
+import { friendlyAuthError } from '../lib/authErrors'
+
 
 const COUNTRIES = ['United States', 'Canada', 'Argentina']
 
@@ -26,6 +29,11 @@ export default function Register() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
+  const { signUp } = useAuth()
+  const navigate = useNavigate()
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
 
   function handleChange(event) {
     const { name, type, value, checked } = event.target
@@ -34,14 +42,42 @@ export default function Register() {
     if (submitted) setErrors(validateRegister(next))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const found = validateRegister(values)
     setErrors(found)
     setSubmitted(true)
     if (Object.keys(found).length > 0) return
 
-    console.log('valid form', values) // temporary, step 6c replaces this
+    setSubmitting(true)
+    setFormError('')
+
+    const { data, error } = await signUp({
+      email: values.email.trim(),
+      password: values.password,
+      profile: {
+        first_name: values.firstName.trim(),
+        last_name: values.lastName.trim(),
+        username: values.username.trim(),
+        address: values.address.trim(),
+        city: values.city.trim(),
+        zip: values.zip.trim(),
+        country: values.country,
+      },
+    })
+
+    setSubmitting(false)
+
+    if (error) {
+      setFormError(friendlyAuthError(error))
+      return
+    }
+
+    if (data.session) {
+      navigate('/explore', { replace: true })
+    } else {
+      setNeedsConfirmation(true)
+    }
   }
 
   const field = (name) => ({

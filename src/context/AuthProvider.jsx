@@ -25,6 +25,8 @@ export default function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     loading,
+    signUp: ({ email, password, profile }) =>
+      supabase.auth.signUp({ email, password, options: { data: profile } }),
     signOut: () => supabase.auth.signOut(),
   }
 
