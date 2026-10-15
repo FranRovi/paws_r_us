@@ -6,6 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useProfile } from "./hooks/useProfile";
 import { usePets } from "./hooks/usePets";
 import { usePet } from "./hooks/usePet";
+import { useFavorites } from "./hooks/useFavorites";
 
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("./hooks/useProfile", () => ({ useProfile: vi.fn() }));
@@ -14,6 +15,12 @@ vi.mock("./lib/petPhoto", () => ({
   petPhotoUrl: (path) => (path ? `https://photos.test/${path}` : null),
 }));
 vi.mock("./hooks/usePet", () => ({ usePet: vi.fn() }));
+vi.mock("./hooks/useFavorites", () => ({ useFavorites: vi.fn() }));
+vi.mock("./context/FavoritesProvider", () => ({
+  default: ({ children }) => children,
+}));
+
+const toggleFavorite = vi.fn();
 
 const loggedOut = {
   user: null,
@@ -90,6 +97,12 @@ beforeEach(() => {
   useProfile.mockReturnValue({ profile, loading: false, error: "" });
   usePets.mockReturnValue({ pets, loading: false, error: "" });
   usePet.mockReturnValue({ pet: petDetail, loading: false, error: "" });
+  toggleFavorite.mockClear();
+  useFavorites.mockReturnValue({
+    loading: false,
+    isFavorite: (id) => id === "p1",
+    toggleFavorite,
+  });
 });
 
 function renderAt(path) {
@@ -363,5 +376,30 @@ describe("App routing", () => {
     usePet.mockReturnValue({ pet: null, loading: false, error: "Boom" });
     renderAt("/pets/p1");
     expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
+  });
+  it("shows which pets are saved and toggles them from Explore", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    expect(
+      screen.getByRole("button", { name: "Remove Max from favorites" }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    const rocky = screen.getByRole("button", {
+      name: "Save Rocky to favorites",
+    });
+    expect(rocky).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(rocky);
+    expect(toggleFavorite).toHaveBeenCalledWith("p2");
+  });
+
+  it("shows the heart on the pet detail page", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/pets/p1");
+
+    expect(
+      screen.getByRole("button", { name: "Remove Max from favorites" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });

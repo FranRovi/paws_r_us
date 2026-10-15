@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { formatAge } from "../lib/pets";
 import { petPhotoUrl } from "../lib/petPhoto";
 import PawIcon from "./PawIcon";
+import FavoriteButton from "./FavoriteButton";
 
 const SPECIES_LABEL = { cat: "Cat", dog: "Dog" };
 
@@ -29,7 +30,7 @@ export default function PetCard({ pet }) {
           </span>
         )}
       </Link>
-
+      <FavoriteButton pet={pet} size="lg" className="absolute right-5 top-5" />
       <Link to={href} className="flex flex-col gap-1 px-2 pb-2 pt-2.5">
         <span className="text-xl font-extrabold">{pet.name}</span>
         <span className="text-sm text-muted">

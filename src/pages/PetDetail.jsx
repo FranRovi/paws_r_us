@@ -3,6 +3,7 @@ import PawIcon from "../components/PawIcon";
 import { usePet } from "../hooks/usePet";
 import { formatAge } from "../lib/pets";
 import { petPhotoUrl } from "../lib/petPhoto";
+import FavoriteButton from "../components/FavoriteButton";
 
 const SPECIES_LABEL = { cat: "Cat", dog: "Dog" };
 const SEX_LABEL = { female: "Female", male: "Male" };
@@ -123,11 +124,6 @@ export default function PetDetail() {
             <PawIcon className="size-24 fill-brown/40" />
           </span>
         )}
-        {pet.photo_credit && (
-          <span className="relative rounded-full bg-white/85 px-3.5 py-1.5 text-[13px]">
-            {pet.photo_credit}
-          </span>
-        )}
       </div>
 
       <div className="flex flex-wrap items-start gap-8">
@@ -215,6 +211,12 @@ export default function PetDetail() {
             Adoption applications will open soon.
           </p>
         </aside>
+        {pet.photo_credit && (
+          <span className="relative rounded-full bg-white/85 px-3.5 py-1.5 text-[13px]">
+            {pet.photo_credit}
+          </span>
+        )}
+        <FavoriteButton pet={pet} size="lg" className="absolute right-5 top-5" />
       </div>
     </section>
   );
