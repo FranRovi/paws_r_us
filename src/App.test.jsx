@@ -243,4 +243,53 @@ describe("App routing", () => {
     renderAt("/explore");
     expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
   });
+  it("hides dogs when the Dogs box is unticked", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    fireEvent.click(screen.getByLabelText("Dogs"));
+
+    expect(screen.getByText("1 pet")).toBeInTheDocument();
+    expect(screen.queryByText(/PetLove Rescue/)).not.toBeInTheDocument();
+  });
+
+  it("searches by name, breed or shelter", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    fireEvent.change(screen.getByRole("searchbox", { name: /search pets/i }), {
+      target: { value: "husky" },
+    });
+
+    expect(screen.getByText("1 pet")).toBeInTheDocument();
+    expect(screen.getByText("PetLove Rescue · 4 mi")).toBeInTheDocument();
+  });
+
+  it("shows an empty state, and Reset brings the pets back", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    fireEvent.change(screen.getByRole("searchbox", { name: /search pets/i }), {
+      target: { value: "zzz" },
+    });
+    expect(screen.getByText("0 pets")).toBeInTheDocument();
+    expect(screen.getByText("No pets match these filters")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(screen.getByText("2 pets")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No pets match these filters"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("changes the sort order", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    fireEvent.change(screen.getByLabelText(/sort by/i), {
+      target: { value: "age" },
+    });
+
+    expect(screen.getByLabelText(/sort by/i)).toHaveValue("age");
+  });
 });
