@@ -5,6 +5,7 @@ import App from "./App";
 import { useAuth } from "./hooks/useAuth";
 import { useProfile } from "./hooks/useProfile";
 import { usePets } from "./hooks/usePets";
+import { usePet } from "./hooks/usePet";
 
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("./hooks/useProfile", () => ({ useProfile: vi.fn() }));
@@ -12,6 +13,7 @@ vi.mock("./hooks/usePets", () => ({ usePets: vi.fn() }));
 vi.mock("./lib/petPhoto", () => ({
   petPhotoUrl: (path) => (path ? `https://photos.test/${path}` : null),
 }));
+vi.mock("./hooks/usePet", () => ({ usePet: vi.fn() }));
 
 const loggedOut = {
   user: null,
@@ -64,10 +66,30 @@ const pets = [
   },
 ];
 
+const petDetail = {
+  id: "p1",
+  name: "Max",
+  species: "cat",
+  breed: "American Shorthair",
+  age_months: 6,
+  sex: "female",
+  energy: 3,
+  intro: "Max is a curious, affectionate stray.",
+  photo_path: "max.jpg",
+  photo_credit: "Photo by Jane Doe on Pexels",
+  shelter: {
+    name: "Heart Shelter",
+    city: "New York, NY",
+    phone: "123-456-7890",
+    email: "heart@example.com",
+  },
+};
+
 beforeEach(() => {
   useAuth.mockReturnValue(loggedOut);
   useProfile.mockReturnValue({ profile, loading: false, error: "" });
   usePets.mockReturnValue({ pets, loading: false, error: "" });
+  usePet.mockReturnValue({ pet: petDetail, loading: false, error: "" });
 });
 
 function renderAt(path) {
@@ -291,5 +313,55 @@ describe("App routing", () => {
     });
 
     expect(screen.getByLabelText(/sort by/i)).toHaveValue("age");
+  });
+  it("shows the pet detail page", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/pets/p1");
+
+    expect(screen.getByRole("heading", { name: "Max" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Cat · American Shorthair · 6 months · Female · New York, NY",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Energy level 3 of 5" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Max is a curious, affectionate stray."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Photo by Jane Doe on Pexels")).toBeInTheDocument();
+    expect(screen.getByText("Heart Shelter")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "heart@example.com" }),
+    ).toHaveAttribute("href", "mailto:heart@example.com");
+    expect(
+      screen.getByText("You join Max's waiting list."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adopt Me" })).toBeDisabled();
+    expect(
+      screen.getByRole("link", { name: /back to results/i }),
+    ).toHaveAttribute("href", "/explore");
+  });
+
+  it("shows a not-found message for an unknown pet", () => {
+    useAuth.mockReturnValue(loggedIn);
+    usePet.mockReturnValue({ pet: null, loading: false, error: "" });
+    renderAt("/pets/nope");
+    expect(
+      screen.getByRole("heading", { name: /couldn't find this pet/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows loading and error states on the pet page", () => {
+    useAuth.mockReturnValue(loggedIn);
+    usePet.mockReturnValue({ pet: null, loading: true, error: "" });
+    const { unmount } = renderAt("/pets/p1");
+    expect(screen.getByRole("status")).toHaveTextContent(/loading pet/i);
+    unmount();
+
+    usePet.mockReturnValue({ pet: null, loading: false, error: "Boom" });
+    renderAt("/pets/p1");
+    expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
   });
 });
