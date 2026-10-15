@@ -6,9 +6,10 @@ import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 import GuestRoute from "./components/GuestRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
-import PawLogo from "./components/PawLogo";
-import OrangeBackground from "./components/OrangeBackground";
+// import PawLogo from "./components/PawLogo";
+// import OrangeBackground from "./components/OrangeBackground";
 import AppLayout from "./components/AppLayout";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/explore" element={<Explore />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />

@@ -3,8 +3,10 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
 import { useAuth } from "./hooks/useAuth";
+import { useProfile } from "./hooks/useProfile";
 
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
+vi.mock("./hooks/useProfile", () => ({ useProfile: vi.fn() }));
 
 const loggedOut = {
   user: null,
@@ -15,8 +17,20 @@ const loggedOut = {
 };
 const loggedIn = { ...loggedOut, user: { email: "me@example.com" } };
 
+const profile = {
+  id: "1",
+  first_name: "Alex",
+  last_name: "Rivera",
+  username: "alex.rivera",
+  address: "4 N 2nd St",
+  city: "New York",
+  zip: "10001",
+  country: "United States",
+};
+
 beforeEach(() => {
   useAuth.mockReturnValue(loggedOut);
+  useProfile.mockReturnValue({ profile, loading: false, error: "" });
 });
 
 function renderAt(path) {
@@ -99,5 +113,41 @@ describe("App routing", () => {
     expect(
       screen.getByRole("link", { name: /account, edit profile/i }),
     ).toHaveTextContent("M");
+  });
+
+  it("shows the profile details to a logged-in user", () => {
+    useAuth.mockReturnValue({
+      ...loggedIn,
+      user: { email: "me@example.com", created_at: "2026-10-01T12:00:00Z" },
+    });
+    renderAt("/profile");
+
+    expect(
+      screen.getByRole("heading", { name: /edit profile/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/hello, alex/i)).toBeInTheDocument();
+    expect(screen.getByText(/member since oct 2026/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toHaveValue("alex.rivera");
+    expect(screen.getByLabelText(/email/i)).toHaveValue("me@example.com");
+  });
+
+  it("shows a loading message while the profile loads", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useProfile.mockReturnValue({ profile: null, loading: true, error: "" });
+    renderAt("/profile");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /loading your profile/i,
+    );
+  });
+
+  it("shows an error when the profile cannot be loaded", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useProfile.mockReturnValue({
+      profile: null,
+      loading: false,
+      error: "Boom",
+    });
+    renderAt("/profile");
+    expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
   });
 });
