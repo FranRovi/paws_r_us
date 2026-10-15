@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateRegister, validateLogin } from "./validation";
+import { validateRegister, validateLogin, validateProfile } from "./validation";
 
 const valid = {
   firstName: "Alex",
@@ -85,5 +85,29 @@ describe("validateLogin", () => {
 
   it("accepts valid values", () => {
     expect(validateLogin({ email: "a@b.co", password: "secret" })).toEqual({});
+  });
+});
+
+describe("validateProfile", () => {
+  const valid = {
+    first_name: "Alex",
+    last_name: "Rivera",
+    username: "alex.rivera",
+    address: "4 N 2nd St",
+    city: "New York",
+    zip: "10001",
+  };
+
+  it("accepts valid values", () => {
+    expect(validateProfile(valid)).toEqual({});
+  });
+
+  it("flags empty fields and a bad username", () => {
+    const errors = validateProfile({
+      ...valid,
+      first_name: " ",
+      username: "a!",
+    });
+    expect(Object.keys(errors).sort()).toEqual(["first_name", "username"]);
   });
 });

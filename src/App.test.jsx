@@ -26,6 +26,12 @@ const profile = {
   city: "New York",
   zip: "10001",
   country: "United States",
+  home_type: "House with a yard",
+  tenure: "I own my home",
+  other_pets: "No other pets",
+  notify_appointments: true,
+  notify_applications: true,
+  notify_messages: false,
 };
 
 beforeEach(() => {
@@ -128,7 +134,7 @@ describe("App routing", () => {
     expect(screen.getByText(/hello, alex/i)).toBeInTheDocument();
     expect(screen.getByText(/member since oct 2026/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/username/i)).toHaveValue("alex.rivera");
-    expect(screen.getByLabelText(/email/i)).toHaveValue("me@example.com");
+    expect(screen.getByLabelText("Email")).toHaveValue("me@example.com");
   });
 
   it("shows a loading message while the profile loads", () => {
@@ -149,5 +155,32 @@ describe("App routing", () => {
     });
     renderAt("/profile");
     expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
+  });
+
+  it("shows validation errors when saving a profile with an empty name", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/profile");
+    fireEvent.change(screen.getByLabelText(/first name/i), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    expect(screen.getByText("Enter your first name.")).toBeInTheDocument();
+  });
+
+  it("saves the profile and shows a confirmation", async () => {
+    const save = vi.fn().mockResolvedValue({ error: null });
+    useAuth.mockReturnValue(loggedIn);
+    useProfile.mockReturnValue({ profile, loading: false, error: "", save });
+    renderAt("/profile");
+
+    fireEvent.change(screen.getByLabelText(/city/i), {
+      target: { value: "Boston" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+    expect(await screen.findByText(/profile saved/i)).toBeInTheDocument();
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ city: "Boston" }),
+    );
   });
 });

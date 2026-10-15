@@ -1,7 +1,7 @@
 import PageCard from "../components/PageCard";
-import TextField from "../components/TextField";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
+import ProfileForm from "../components/ProfileForm";
 
 function memberSince(user) {
   if (!user?.created_at) return "";
@@ -13,7 +13,7 @@ function memberSince(user) {
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { profile, loading, error } = useProfile();
+  const { profile, loading, error, save } = useProfile();
 
   if (loading) {
     return (
@@ -57,7 +57,9 @@ export default function Profile() {
         </button>
       </aside>
 
-      <form className="flex min-w-0 flex-[1_1_640px] flex-col gap-6">
+      <ProfileForm profile={profile} email={user.email} save={save} />
+
+      {/* <form className="flex min-w-0 flex-[1_1_640px] flex-col gap-6">
         <div>
           <h1 className="text-[40px] font-extrabold tracking-tight">
             Edit profile
@@ -105,7 +107,7 @@ export default function Profile() {
             <TextField label="Country" value={profile.country ?? ""} readOnly />
           </div>
         </section>
-      </form>
+      </form> */}
     </PageCard>
   );
 }
