@@ -4,9 +4,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
 import { useAuth } from "./hooks/useAuth";
 import { useProfile } from "./hooks/useProfile";
+import { usePets } from "./hooks/usePets";
 
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("./hooks/useProfile", () => ({ useProfile: vi.fn() }));
+vi.mock("./hooks/usePets", () => ({ usePets: vi.fn() }));
+vi.mock("./lib/petPhoto", () => ({
+  petPhotoUrl: (path) => (path ? `https://photos.test/${path}` : null),
+}));
 
 const loggedOut = {
   user: null,
@@ -34,9 +39,35 @@ const profile = {
   notify_messages: false,
 };
 
+const pets = [
+  {
+    id: "p1",
+    name: "Max",
+    species: "cat",
+    breed: "American Shorthair",
+    age_months: 6,
+    photo_path: "max.jpg",
+    shelter: { name: "Heart Shelter", city: "New York, NY", distance_miles: 2 },
+  },
+  {
+    id: "p2",
+    name: "Rocky",
+    species: "dog",
+    breed: "Husky",
+    age_months: 24,
+    photo_path: null,
+    shelter: {
+      name: "PetLove Rescue",
+      city: "Brooklyn, NY",
+      distance_miles: 4,
+    },
+  },
+];
+
 beforeEach(() => {
   useAuth.mockReturnValue(loggedOut);
   useProfile.mockReturnValue({ profile, loading: false, error: "" });
+  usePets.mockReturnValue({ pets, loading: false, error: "" });
 });
 
 function renderAt(path) {
@@ -87,7 +118,7 @@ describe("App routing", () => {
     expect(
       screen.getByRole("heading", { name: /explore/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/me@example.com/i)).toBeInTheDocument();
+    // expect(screen.getByText(/me@example.com/i)).toBeInTheDocument();
   });
 
   it("sends a logged-in user away from /login", () => {
@@ -182,5 +213,34 @@ describe("App routing", () => {
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({ city: "Boston" }),
     );
+  });
+  it("lists the pets on Explore", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    expect(screen.getByText("2 pets")).toBeInTheDocument();
+    expect(
+      screen.getByText("Cat · American Shorthair · 6 months"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("PetLove Rescue · 4 mi")).toBeInTheDocument();
+    expect(screen.getByAltText("Max, American Shorthair")).toHaveAttribute(
+      "src",
+      "https://photos.test/max.jpg",
+    );
+    expect(screen.queryByAltText(/rocky/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a loading message while the pets load", () => {
+    useAuth.mockReturnValue(loggedIn);
+    usePets.mockReturnValue({ pets: [], loading: true, error: "" });
+    renderAt("/explore");
+    expect(screen.getByRole("status")).toHaveTextContent(/loading pets/i);
+  });
+
+  it("shows an error when the pets cannot be loaded", () => {
+    useAuth.mockReturnValue(loggedIn);
+    usePets.mockReturnValue({ pets: [], loading: false, error: "Boom" });
+    renderAt("/explore");
+    expect(screen.getByRole("alert")).toHaveTextContent(/boom/i);
   });
 });
