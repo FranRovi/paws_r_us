@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
@@ -82,5 +82,22 @@ describe("App routing", () => {
     useAuth.mockReturnValue({ ...loggedOut, loading: true });
     renderAt("/explore");
     expect(screen.getByRole("status")).toHaveTextContent(/loading/i);
+  });
+
+  it("shows the shared header with the active page highlighted", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/explore");
+
+    const nav = screen.getByRole("navigation", { name: /main/i });
+    expect(within(nav).getByRole("link", { name: /explore/i })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      within(nav).getByRole("link", { name: /favorites/i }),
+    ).not.toHaveAttribute("aria-current");
+    expect(
+      screen.getByRole("link", { name: /account, edit profile/i }),
+    ).toHaveTextContent("M");
   });
 });

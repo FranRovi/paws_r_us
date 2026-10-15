@@ -1,11 +1,12 @@
+import PageCard from "../components/PageCard";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Explore() {
   const { user, signOut } = useAuth();
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-extrabold">Explore</h1>
+    <PageCard>
+      <h1 className="text-[40px] font-extrabold tracking-tight">Explore</h1>
       <p>Logged in as {user.email}</p>
       <button
         type="button"
@@ -14,6 +15,6 @@ export default function Explore() {
       >
         Log out
       </button>
-    </div>
+    </PageCard>
   );
 }

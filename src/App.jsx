@@ -8,6 +8,7 @@ import GuestRoute from "./components/GuestRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PawLogo from "./components/PawLogo";
 import OrangeBackground from "./components/OrangeBackground";
+import AppLayout from "./components/AppLayout";
 
 export default function App() {
   return (
@@ -20,7 +21,9 @@ export default function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/explore" element={<Explore />} />
+        <Route element={<AppLayout />}>
+          <Route path="/explore" element={<Explore />} />
+        </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
