@@ -216,7 +216,11 @@ export default function PetDetail() {
             {pet.photo_credit}
           </span>
         )}
-        <FavoriteButton pet={pet} size="lg" className="absolute right-5 top-5" />
+        <FavoriteButton
+          pet={pet}
+          size="lg"
+          className="absolute right-5 top-5"
+        />
       </div>
     </section>
   );

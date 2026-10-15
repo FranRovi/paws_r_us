@@ -15,7 +15,7 @@ export default function PetCard({ pet }) {
       <Link
         to={href}
         aria-label={`View ${pet.name}`}
-        className="block h-[180px] overflow-hidden rounded-[20px] bg-paw/40"
+        className={"block h-[180px] overflow-hidden rounded-[20px] bg-paw/40"}
       >
         {photo ? (
           <img

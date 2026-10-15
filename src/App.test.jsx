@@ -402,4 +402,56 @@ describe("App routing", () => {
       screen.getByRole("button", { name: "Remove Max from favorites" }),
     ).toHaveAttribute("aria-pressed", "true");
   });
+  it("lists only the saved pets on Favorites", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/favorites");
+
+    expect(
+      screen.getByRole("heading", { name: "My favorites" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("1 pet saved. Tap the heart to remove one."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Cat · American Shorthair · 6 months"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/PetLove Rescue/)).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove Max from favorites" }),
+    );
+    expect(toggleFavorite).toHaveBeenCalledWith("p1");
+  });
+
+  it("shows an empty state when nothing is saved", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useFavorites.mockReturnValue({
+      loading: false,
+      isFavorite: () => false,
+      toggleFavorite,
+    });
+    renderAt("/favorites");
+
+    expect(
+      screen.getByText("0 pets saved. Tap the heart to remove one."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("No favorites yet")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse pets" })).toHaveAttribute(
+      "href",
+      "/explore",
+    );
+  });
+
+  it("shows a loading message while favorites load", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useFavorites.mockReturnValue({
+      loading: true,
+      isFavorite: () => false,
+      toggleFavorite,
+    });
+    renderAt("/favorites");
+
+    expect(screen.getByRole("status")).toHaveTextContent(/loading favorites/i);
+    expect(screen.queryByText("No favorites yet")).not.toBeInTheDocument();
+  });
 });
