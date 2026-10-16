@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import PageCard from "../components/PageCard";
 import { useApplications } from "../hooks/useApplications";
 import { useAppointments } from "../hooks/useAppointments";
@@ -25,13 +25,10 @@ import {
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function BackLink() {
+function BackLink({ to = "/adoptions", children = "Back to My adoptions" }) {
   return (
-    <Link
-      to="/adoptions"
-      className="inline-flex min-h-11 items-center font-semibold underline"
-    >
-      Back to My adoptions
+    <Link to={to} className="inline-flex min-h-11 items-center font-semibold underline">
+      {children}
     </Link>
   );
 }
@@ -52,8 +49,14 @@ function MonthButton({ label, disabled, onClick, children }) {
 
 export default function ScheduleVisit() {
   const { applicationId } = useParams();
+  const [searchParams] = useSearchParams();
   const { applications, loading: appsLoading } = useApplications();
-  const { visitsFor, loading: visitsLoading, book } = useAppointments();
+  const {
+    visitsFor,
+    loading: visitsLoading,
+    book,
+    reschedule,
+  } = useAppointments();
   const { pets, loading: petsLoading } = usePets();
 
   const [now] = useState(() => new Date());
@@ -109,13 +112,21 @@ export default function ScheduleVisit() {
     );
   }
 
+  // Reschedule mode: ?reschedule=<id of one of your scheduled visits>
+  const rescheduleId = searchParams.get("reschedule");
+  const moving =
+    visits.find((v) => v.id === rescheduleId && v.status === "scheduled") ??
+    null;
+
   const tabs = visitTabs(visits);
-  const kind = tabs.some((t) => t.kind === selectedKind && !t.locked)
-    ? selectedKind
-    : defaultKind(visits);
-  const reason = bookBlockReason(application, visits, kind);
+  const kind = moving
+    ? moving.kind
+    : tabs.some((t) => t.kind === selectedKind && !t.locked)
+      ? selectedKind
+      : defaultKind(visits);
+  const reason = moving ? null : bookBlockReason(application, visits, kind);
   const blocked = reason !== null;
-  const lockedNote = tabs.find((t) => t.locked)?.note;
+  const lockedNote = moving ? null : tabs.find((t) => t.locked)?.note;
   const slots = day ? daySlots(day, taken, now) : [];
 
   const cells = monthCells(now, monthOffset);
@@ -141,7 +152,9 @@ export default function ScheduleVisit() {
       { starts_at: slot.toISOString() },
       pet.shelter.name,
     );
-    const result = await book(application.id, kind, slot);
+    const result = moving
+      ? await reschedule(moving.id, slot)
+      : await book(application.id, kind, slot);
     setBusy(false);
     setSlot(null);
     reloadTaken();
@@ -149,7 +162,9 @@ export default function ScheduleVisit() {
       setError(result.error);
       return;
     }
-    setBooked(`${VISIT_LABEL[kind]} booked for ${summary}.`);
+    setBooked(
+      `${VISIT_LABEL[kind]} ${moving ? "moved to" : "booked for"} ${summary}.`,
+    );
   }
 
   return (
@@ -157,7 +172,9 @@ export default function ScheduleVisit() {
       <div>
         <BackLink />
         <h1 className="text-[40px] font-extrabold tracking-tight">
-          Schedule a visit for {pet.name}
+          {moving
+            ? `Reschedule your visit for ${pet.name}`
+            : `Schedule a visit for ${pet.name}`}
         </h1>
         <p className="mt-1.5 text-base text-muted">
           {pet.shelter.name}
@@ -170,7 +187,7 @@ export default function ScheduleVisit() {
           <button
             key={tab.kind}
             type="button"
-            disabled={tab.locked}
+            disabled={tab.locked || Boolean(moving && tab.kind !== kind)}
             aria-pressed={tab.kind === kind}
             onClick={() => pickKind(tab.kind)}
             className={`min-h-14 cursor-pointer rounded-2xl border-2 border-ink px-6 text-base font-extrabold disabled:cursor-not-allowed disabled:opacity-45 ${
@@ -308,7 +325,13 @@ export default function ScheduleVisit() {
             onClick={confirm}
             className="min-h-[60px] cursor-pointer rounded-2xl bg-brand text-lg font-extrabold text-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "Booking…" : "Confirm visit"}
+            {busy
+              ? moving
+                ? "Moving…"
+                : "Booking…"
+              : moving
+                ? "Move visit"
+                : "Confirm visit"}
           </button>
 
           {error && (
@@ -326,8 +349,8 @@ export default function ScheduleVisit() {
               className="rounded-[20px] bg-[#E3F5D9] px-5 py-4 font-semibold"
             >
               {booked}{" "}
-              <Link to="/adoptions" className="font-extrabold underline">
-                Go to My adoptions
+              <Link to="/appointments" className="font-extrabold underline">
+                View my appointments
               </Link>
             </div>
           )}

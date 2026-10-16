@@ -22,6 +22,7 @@ vi.mock("../hooks/useTakenSlots", () => ({
 }));
 
 const book = vi.fn();
+const reschedule = vi.fn();
 const reloadTaken = vi.fn();
 
 const pet = {
@@ -36,12 +37,14 @@ function setup({
   applications = [inReview],
   visits = [],
   taken = [],
+  url = '/adoptions/a1/schedule'
 } = {}) {
   mocks.useApplications.mockReturnValue({ applications, loading: false });
   mocks.useAppointments.mockReturnValue({
     visitsFor: () => visits,
     loading: false,
     book,
+    reschedule,
   });
   mocks.usePets.mockReturnValue({ pets: [pet], loading: false });
   mocks.useTakenSlots.mockReturnValue({
@@ -51,7 +54,7 @@ function setup({
   });
 
   return render(
-    <MemoryRouter initialEntries={["/adoptions/a1/schedule"]}>
+    <MemoryRouter initialEntries={[url]}>
       <Routes>
         <Route
           path="/adoptions/:applicationId/schedule"
@@ -71,6 +74,7 @@ describe("ScheduleVisit", () => {
     vi.setSystemTime(new Date(2026, 9, 16, 12, 0)); // Fri Oct 16, 2026, noon
     vi.clearAllMocks();
     book.mockResolvedValue({});
+    reschedule.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -142,7 +146,7 @@ describe("ScheduleVisit", () => {
     );
     expect(reloadTaken).toHaveBeenCalled();
     expect(
-      screen.getByRole("link", { name: "Go to My adoptions" }),
+      screen.getByRole("link", { name: "View my appointments" }),
     ).toBeInTheDocument();
   });
 
@@ -231,5 +235,35 @@ describe("ScheduleVisit", () => {
     expect(
       screen.getByRole("heading", { name: "November 2026" }),
     ).toBeInTheDocument();
+  });
+  it("moves an existing visit when opened in reschedule mode", async () => {
+    setup({
+      url: "/adoptions/a1/schedule?reschedule=v1",
+      visits: [
+        {
+          id: "v1",
+          kind: "meet",
+          status: "scheduled",
+          starts_at: new Date(2026, 9, 20, 9, 0).toISOString(),
+        },
+      ],
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "Reschedule your visit for Daisy" }),
+    ).toBeInTheDocument();
+    expect(day("Monday, October 19")).toBeEnabled(); // not blocked as "already booked"
+
+    fireEvent.click(day("Monday, October 19"));
+    fireEvent.click(time("10:30 AM"));
+    fireEvent.click(screen.getByRole("button", { name: "Move visit" }));
+
+    expect(
+      await screen.findByText(
+        /Meet and greet moved to Oct 19, 10:30 AM at Heart Shelter/,
+      ),
+    ).toBeInTheDocument();
+    expect(reschedule).toHaveBeenCalledWith("v1", new Date(2026, 9, 19, 10, 30));
+    expect(book).not.toHaveBeenCalled();
   });
 });

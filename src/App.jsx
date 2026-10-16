@@ -12,6 +12,7 @@ import PetDetail from "./pages/PetDetail";
 import Favorites from "./pages/Favorites";
 import Adoptions from "./pages/Adoptions";
 import ScheduleVisit from "./pages/ScheduleVisit";
+import Appointments from "./pages/Appointments";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/adoptions" element={<Adoptions />} />
           <Route path="pets/:id" element={<PetDetail />} />
           <Route path="/adoptions/:applicationId/schedule" element={<ScheduleVisit />} />
+          <Route path="/appointments" element={<Appointments />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>

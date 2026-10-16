@@ -18,6 +18,10 @@ import {
   monthTitle,
   visitSummary,
   visitTabs,
+  dateTile,
+  formatVisitWhen,
+  visitNote,
+  visitStatusLabel,
 } from './scheduling'
 import { friendlyAppointmentError } from './appointmentErrors'
 
@@ -215,4 +219,26 @@ describe('friendlyAppointmentError', () => {
       expect(firstBookableMonth(new Date(2026, 9, 31, 18, 0))).toBe(1)
     })
   })
+  describe('visit display', () => {
+  it('formats when a visit happens', () => {
+    expect(formatVisitWhen(new Date(2026, 9, 14, 10, 0).toISOString())).toBe('Wed, Oct 14 · 10:00 AM')
+  })
+
+  it('builds the date tile', () => {
+    expect(dateTile(new Date(2026, 9, 14, 10, 0).toISOString())).toEqual({ month: 'OCT', day: '14' })
+  })
+
+  it('labels each visit status', () => {
+    const at = (day) => new Date(2026, 9, day, 10, 0).toISOString()
+    expect(visitStatusLabel({ status: 'scheduled', starts_at: at(20) }, now)).toBe('Scheduled')
+    expect(visitStatusLabel({ status: 'scheduled', starts_at: at(14) }, now)).toBe('Missed')
+    expect(visitStatusLabel({ status: 'completed', starts_at: at(10) }, now)).toBe('Completed')
+    expect(visitStatusLabel({ status: 'cancelled', starts_at: at(20) }, now)).toBe('Cancelled')
+  })
+
+  it('has a note for each kind of visit', () => {
+    expect(visitNote('meet')).toMatch(/photo ID/)
+    expect(visitNote('home')).toMatch(/your home/)
+  })
+})
 })

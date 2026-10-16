@@ -185,3 +185,30 @@ export function firstBookableMonth(now = new Date(), horizonDays = BOOKING_HORIZ
   }
   return 0
 }
+
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+// "Wed, Oct 14 · 10:00 AM"
+export function formatVisitWhen(value) {
+  const date = new Date(value)
+  return `${WEEKDAYS_SHORT[date.getDay()]}, ${formatVisitDate(date)} · ${formatSlotTime(date)}`
+}
+
+// The little date tile: { month: 'OCT', day: '14' }
+export function dateTile(value) {
+  const date = new Date(value)
+  return { month: MONTHS[date.getMonth()].toUpperCase(), day: String(date.getDate()) }
+}
+
+// Scheduled | Completed | Cancelled | Missed (a scheduled visit whose time passed)
+export function visitStatusLabel(appointment, now = new Date()) {
+  if (appointment.status === 'completed') return 'Completed'
+  if (appointment.status === 'cancelled') return 'Cancelled'
+  return new Date(appointment.starts_at).getTime() > now.getTime() ? 'Scheduled' : 'Missed'
+}
+
+export function visitNote(kind) {
+  return kind === 'home'
+    ? 'A shelter volunteer visits your home. Plan about an hour.'
+    : 'Bring a photo ID. Plan about 45 minutes.'
+}
