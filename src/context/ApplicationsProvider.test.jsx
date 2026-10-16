@@ -128,4 +128,21 @@ describe("ApplicationsProvider", () => {
 
     expect(await screen.findByText("ready:cancelled")).toBeInTheDocument();
   });
+  it("changes the status through the demo shelter function", async () => {
+    db.list.mockResolvedValue({ data: [row("pending")], error: null });
+    db.rpc.mockResolvedValue({
+      data: { ...row("accepted"), user_id: "u1", updated_at: "2026-10-16T12:00:00Z" },
+      error: null,
+    });
+    renderProbe();
+    await screen.findByText("ready:pending");
+
+    fireEvent.click(screen.getByText("accept"));
+
+    expect(await screen.findByText("ready:accepted")).toBeInTheDocument();
+    expect(db.rpc).toHaveBeenCalledWith("demo_set_application_status", {
+      p_application_id: "a1",
+      p_status: "accepted",
+    });
+  });
 });
