@@ -10,6 +10,7 @@ const db = vi.hoisted(() => {
     inserted: null,
     updated: null,
   }
+  const rpc = vi.fn()
   const from = vi.fn(() => {
     let kind = 'read'
     const query = {
@@ -31,10 +32,10 @@ const db = vi.hoisted(() => {
     }
     return query
   })
-  return { state, from }
+  return { state, from, rpc }
 })
 
-vi.mock('../lib/supabase', () => ({ supabase: { from: db.from } }))
+vi.mock('../lib/supabase', () => ({ supabase: { from: db.from, rpc: db.rpc } }))
 // Same path as the import inside AppointmentsProvider.jsx
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }))
 
@@ -148,5 +149,39 @@ describe('AppointmentsProvider', () => {
     expect(outcome).toEqual({})
     expect(db.state.updated).toEqual({ status: 'cancelled' })
     expect(result.current.appointments.find((a) => a.id === 'a1').status).toBe('cancelled')
+  })
+  it('changes a visit status through the demo shelter function', async () => {
+    const { result } = await setup()
+    db.rpc.mockResolvedValue({
+      data: { ...rows[0], status: 'completed', user_id: 'u1', updated_at: '2026-10-16T12:00:00Z' },
+      error: null,
+    })
+
+    let outcome
+    await act(async () => {
+      outcome = await result.current.demoSetVisitStatus('a1', 'completed')
+    })
+
+    expect(outcome).toEqual({})
+    expect(db.rpc).toHaveBeenCalledWith('demo_set_visit_status', {
+      p_appointment_id: 'a1',
+      p_status: 'completed',
+    })
+    expect(result.current.appointments.find((a) => a.id === 'a1')).toEqual({
+      ...rows[0],
+      status: 'completed',
+    })
+  })
+
+  it('returns a friendly error when the demo function refuses', async () => {
+    const { result } = await setup()
+    db.rpc.mockResolvedValue({ data: null, error: { message: 'home_visit_exists' } })
+
+    let outcome
+    await act(async () => {
+      outcome = await result.current.demoSetVisitStatus('a1', 'scheduled')
+    })
+
+    expect(outcome.error).toMatch(/home visit first/)
   })
 })

@@ -16,9 +16,12 @@ vi.mock("../hooks/useAppointments", () => ({
   useAppointments: mocks.useAppointments,
 }));
 vi.mock("../hooks/usePets", () => ({ usePets: mocks.usePets }));
+vi.mock("../lib/demo", () => ({ demoToolsEnabled: true }));
+
 
 const cancel = vi.fn();
 const reload = vi.fn();
+const demoSetVisitStatus = vi.fn()
 
 const pets = [
   { id: "p1", name: "Daisy", shelter: { name: "Heart Shelter" } },
@@ -50,6 +53,7 @@ function setup({ appointments = visits, loading = false, error = null } = {}) {
     error,
     cancel,
     reload,
+    demoSetVisitStatus,
   });
   return render(
     <MemoryRouter>
@@ -64,6 +68,7 @@ describe("Appointments", () => {
     vi.setSystemTime(new Date(2026, 9, 16, 12, 0)); // Fri Oct 16, 2026, noon
     vi.clearAllMocks();
     cancel.mockResolvedValue({});
+    demoSetVisitStatus.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -139,5 +144,38 @@ describe("Appointments", () => {
   it("shows a loading message", () => {
     setup({ loading: true });
     expect(screen.getByRole("status")).toHaveTextContent("Loading your visits");
+  });
+  it("lets the demo shelter complete an upcoming visit", () => {
+    setup();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mark as completed (Meet and greet with Daisy)",
+      }),
+    );
+    expect(demoSetVisitStatus).toHaveBeenCalledWith("v1", "completed");
+  });
+
+  it("lets the demo shelter undo a completed visit or complete a missed one", () => {
+    setup();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Undo completed (Meet and greet with Rocky)",
+      }),
+    );
+    expect(demoSetVisitStatus).toHaveBeenCalledWith("v2", "scheduled");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mark as completed (Meet and greet with Milo)",
+      }),
+    );
+    expect(demoSetVisitStatus).toHaveBeenCalledWith("v4", "completed");
+  });
+
+  it("offers no demo controls for a cancelled visit", () => {
+    setup();
+    expect(
+      screen.queryByRole("button", { name: /\(Home visit with Rocky\)/ }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,16 @@ import { AppointmentsContext } from './AppointmentsContext'
 const COLUMNS = 'id, application_id, shelter_id, kind, starts_at, status'
 const byStart = (a, b) => new Date(a.starts_at) - new Date(b.starts_at)
 
+const toVisit = (row) => ({
+  id: row.id,
+  application_id: row.application_id,
+  shelter_id: row.shelter_id,
+  kind: row.kind,
+  starts_at: row.starts_at,
+  status: row.status,
+});
+
+
 export function AppointmentsProvider({ children }) {
   const { user } = useAuth()
   const userId = user?.id ?? null
@@ -81,14 +91,25 @@ export function AppointmentsProvider({ children }) {
     return {}
   }, [])
 
+  const demoSetVisitStatus = useCallback(async (id, status) => {
+    const { data, error: demoError } = await supabase.rpc('demo_set_visit_status', {
+      p_appointment_id: id,
+      p_status: status,
+    })
+    if (demoError) return { error: friendlyAppointmentError(demoError) }
+    setAppointments((current) => current.map((a) => (a.id === id ? toVisit(data) : a)))
+    return {}
+  }, [])
+
+
   const visitsFor = useCallback(
     (applicationId) => appointments.filter((a) => a.application_id === applicationId),
     [appointments],
   )
 
   const value = useMemo(
-    () => ({ appointments, loading, error, book, reschedule, cancel, visitsFor, reload: load }),
-    [appointments, loading, error, book, reschedule, cancel, visitsFor, load],
+    () => ({ appointments, loading, error, book, reschedule, cancel, demoSetVisitStatus, visitsFor, reload: load }),
+    [appointments, loading, error, book, reschedule, cancel, demoSetVisitStatus, visitsFor, load],
   )
 
   return <AppointmentsContext.Provider value={value}>{children}</AppointmentsContext.Provider>

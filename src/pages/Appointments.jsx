@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import DemoVisitControls from "../components/DemoVisitControls";
 import PageCard from "../components/PageCard";
 import { useApplications } from "../hooks/useApplications";
 import { useAppointments } from "../hooks/useAppointments";
 import { usePets } from "../hooks/usePets";
+import { demoToolsEnabled } from "../lib/demo";
 import {
   VISIT_LABEL,
   dateTile,
@@ -20,7 +22,7 @@ const BADGE = {
   Missed: "bg-[#FFE6CC]",
 };
 
-function UpcomingCard({ visit, pet, now, busy, onCancel }) {
+function UpcomingCard({ visit, pet, now, busy, onCancel, onDemoStatus }) {
   const tile = dateTile(visit.starts_at);
   const status = visitStatusLabel(visit, now);
   const title = `${VISIT_LABEL[visit.kind]} with ${pet.name}`;
@@ -65,6 +67,16 @@ function UpcomingCard({ visit, pet, now, busy, onCancel }) {
           Cancel visit
         </button>
       </div>
+      {demoToolsEnabled && (
+        <div className="basis-full">
+          <DemoVisitControls
+            visit={visit}
+            title={title}
+            busy={busy}
+            onChange={onDemoStatus}
+          />
+        </div>
+      )}
     </article>
   );
 }
@@ -75,6 +87,7 @@ export default function Appointments() {
     loading: visitsLoading,
     error: visitsError,
     cancel,
+    demoSetVisitStatus,
     reload,
   } = useAppointments();
   const { applications, loading: appsLoading } = useApplications();
@@ -103,13 +116,17 @@ export default function Appointments() {
   const upcomingRows = upcoming.map(withPet).filter(Boolean);
   const pastRows = past.map(withPet).filter(Boolean);
 
-  async function cancelVisit(id) {
+  async function run(id, action) {
     setBusyId(id);
     setMessage("");
-    const result = await cancel(id);
+    const result = await action();
     setBusyId(null);
     if (result.error) setMessage(result.error);
   }
+
+  const cancelVisit = (id) => run(id, () => cancel(id));
+  const changeStatus = (id, status) =>
+    run(id, () => demoSetVisitStatus(id, status));
 
   return (
     <PageCard className="flex min-h-[640px] flex-col gap-6">
@@ -156,6 +173,7 @@ export default function Appointments() {
                 now={now}
                 busy={busyId === visit.id}
                 onCancel={cancelVisit}
+                onDemoStatus={changeStatus}
               />
             ))}
             {upcomingRows.length === 0 && (
@@ -170,13 +188,14 @@ export default function Appointments() {
             <h2 className="text-[22px] font-extrabold">Past visits</h2>
             {pastRows.map(({ visit, pet }) => {
               const status = visitStatusLabel(visit, now);
+              const title = `${VISIT_LABEL[visit.kind]} with ${pet.name}`;
               return (
                 <div
                   key={visit.id}
                   className="flex flex-wrap items-center gap-4 rounded-[22px] border-2 border-[#EDEDED] px-[22px] py-4"
                 >
                   <span className="min-w-[260px] flex-1 text-base font-semibold">
-                    {`${VISIT_LABEL[visit.kind]} with ${pet.name}`}
+                    {title}
                   </span>
                   <span className="text-sm text-muted">
                     {formatVisitWhen(visit.starts_at)}
@@ -186,6 +205,16 @@ export default function Appointments() {
                   >
                     {status}
                   </span>
+                  {demoToolsEnabled && visit.status !== "cancelled" && (
+                    <div className="basis-full">
+                      <DemoVisitControls
+                        visit={visit}
+                        title={title}
+                        busy={busyId === visit.id}
+                        onChange={changeStatus}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -240,5 +240,9 @@ describe('friendlyAppointmentError', () => {
     expect(visitNote('meet')).toMatch(/photo ID/)
     expect(visitNote('home')).toMatch(/your home/)
   })
+  it('explains the demo tool errors', () => {
+    expect(friendlyAppointmentError({ message: 'home_visit_exists' })).toMatch(/home visit first/)
+    expect(friendlyAppointmentError({ message: 'appointment_not_found' })).toMatch(/could not find that visit/)
+  })
 })
 })
