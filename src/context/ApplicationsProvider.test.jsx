@@ -8,6 +8,7 @@ const db = vi.hoisted(() => ({
   list: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
+  rpc: vi.fn(),
 }));
 
 vi.mock("../lib/supabase", () => ({
@@ -16,6 +17,7 @@ vi.mock("../lib/supabase", () => ({
       select: () => ({ eq: () => ({ order: db.list }) }),
       insert: () => ({ select: () => ({ single: db.insert }) }),
       update: () => ({ eq: () => ({ select: () => ({ single: db.update }) }) }),
+      rpc: db.rpc,
     }),
   },
 }));
@@ -49,6 +51,14 @@ function Probe() {
         }}
       >
         cancel
+      </button>
+      <button
+        onClick={async () => {
+          const result = await demoSetStatus("a1", "accepted");
+          setMessage(result.error ?? "accepted");
+        }}
+      >
+        accept
       </button>
       <p>{message}</p>
     </>

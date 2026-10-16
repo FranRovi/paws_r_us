@@ -32,6 +32,7 @@ vi.mock("./hooks/useWaitingList", () => ({ useWaitingList: vi.fn() }));
 vi.mock("./context/ApplicationsProvider", () => ({
   default: ({ children }) => children,
 }));
+vi.mock("./lib/demo", () => ({ demoToolsEnabled: true }));
 
 const application = (id, petId, status = "pending") => ({
   id,
@@ -45,11 +46,13 @@ const withApplications = (applications) => ({
   error: "",
   apply,
   cancel,
+  demoSetStatus,
 });
 
 const toggleFavorite = vi.fn();
 const apply = vi.fn();
 const cancel = vi.fn();
+const demoSetStatus = vi.fn();
 
 const loggedOut = {
   user: null,
@@ -138,6 +141,8 @@ beforeEach(() => {
     isFavorite: (id) => id === "p1",
     toggleFavorite,
   });
+  demoSetStatus.mockReset();
+  demoSetStatus.mockResolvedValue({});
 });
 
 function renderAt(path) {
@@ -731,5 +736,48 @@ describe("App routing", () => {
     expect(
       screen.getByRole("link", { name: "View Rocky" }),
     ).toBeInTheDocument();
+  });
+  it("lets the demo shelter change an application's status", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p1")]),
+    );
+    renderAt("/adoptions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open meet and greet (Max)" }),
+    );
+    await waitFor(() =>
+      expect(demoSetStatus).toHaveBeenCalledWith("a1", "in_review"),
+    );
+  });
+
+  it("disables the demo button for the status the application already has", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p1", "in_review")]),
+    );
+    renderAt("/adoptions");
+
+    expect(
+      screen.getByRole("button", { name: "Open meet and greet (Max)" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Approve adoption (Max)" }),
+    ).toBeEnabled();
+  });
+
+  it("shows why a demo status change failed", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    demoSetStatus.mockResolvedValue({ error: "Demo went wrong" });
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p1")]),
+    );
+    renderAt("/adoptions");
+
+    fireEvent.click(screen.getByRole("button", { name: "Decline (Max)" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Demo went wrong",
+    );
   });
 });

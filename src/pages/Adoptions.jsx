@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import ApplicationStepper from "../components/ApplicationStepper";
 import PageCard from "../components/PageCard";
 import PawIcon from "../components/PawIcon";
+import DemoControls from "../components/DemoControls";
+import { demoToolsEnabled } from "../lib/demo";
 import { useApplications } from "../hooks/useApplications";
 import { usePets } from "../hooks/usePets";
 import {
@@ -36,7 +38,7 @@ function slotCopy(used, open) {
   };
 }
 
-function AdoptionCard({ application, pet, busy, onCancel }) {
+function AdoptionCard({ application, pet, busy, onCancel, onDemoStatus }) {
   const photo = petPhotoUrl(pet.photo_path);
 
   return (
@@ -84,6 +86,14 @@ function AdoptionCard({ application, pet, busy, onCancel }) {
           Cancel application
         </button>
       </div>
+      {demoToolsEnabled && (
+        <DemoControls
+          pet={pet}
+          application={application}
+          busy={busy}
+          onChange={onDemoStatus}
+        />
+      )}
     </section>
   );
 }
@@ -94,6 +104,7 @@ export default function Adoptions() {
     loading: appsLoading,
     error: appsError,
     cancel,
+    demoSetStatus,
   } = useApplications();
   const { pets, loading: petsLoading, error: petsError } = usePets();
   const [busyId, setBusyId] = useState(null);
@@ -108,13 +119,18 @@ export default function Adoptions() {
   const open = openSlots(applications);
   const slots = slotCopy(active.length, open);
 
-  async function cancelApplication(applicationId) {
+  async function run(applicationId, action) {
     setBusyId(applicationId);
     setMessage("");
-    const result = await cancel(applicationId);
+    const result = await action();
     setBusyId(null);
     if (result.error) setMessage(result.error);
   }
+
+  const cancelApplication = (applicationId) =>
+    run(applicationId, () => cancel(applicationId));
+  const changeStatus = (applicationId, status) =>
+    run(applicationId, () => demoSetStatus(applicationId, status));
 
   return (
     <PageCard className="flex flex-col gap-6">
@@ -160,6 +176,7 @@ export default function Adoptions() {
                 pet={pet}
                 busy={busyId === application.id}
                 onCancel={cancelApplication}
+                onDemoStatus={changeStatus}
               />
             );
           })}

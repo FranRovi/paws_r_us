@@ -5,6 +5,12 @@ import { supabase } from "../lib/supabase";
 import { ApplicationsContext } from "./ApplicationsContext";
 
 const COLUMNS = "id, pet_id, status, created_at";
+const toApplication = ({ id, pet_id, status, created_at }) => ({
+  id,
+  pet_id,
+  status,
+  created_at,
+});
 
 export default function ApplicationsProvider({ children }) {
   const { user } = useAuth();
@@ -69,9 +75,24 @@ export default function ApplicationsProvider({ children }) {
     return {};
   }, []);
 
+  const demoSetStatus = useCallback(async (applicationId, status) => {
+    const { data, error } = await supabase.rpc("demo_set_application_status", {
+      p_application_id: applicationId,
+      p_status: status,
+    });
+
+    if (error) return { error: friendlyApplicationError(error) };
+    setApplications((current) =>
+      current.map((application) =>
+        application.id === data.id ? toApplication(data) : application,
+      ),
+    );
+    return {};
+  }, []);
+
   const value = useMemo(
-    () => ({ applications, loading, error, apply, cancel }),
-    [applications, loading, error, apply, cancel],
+    () => ({ applications, loading, error, apply, cancel, demoSetStatus }),
+    [applications, loading, error, apply, cancel, demoSetStatus],
   );
 
   return (
