@@ -6,16 +6,17 @@ import PawIcon from "../components/PawIcon";
 import DemoControls from "../components/DemoControls";
 import { demoToolsEnabled } from "../lib/demo";
 import { useApplications } from "../hooks/useApplications";
+import { useAppointments } from "../hooks/useAppointments";
 import { usePets } from "../hooks/usePets";
 import {
   MAX_ACTIVE_APPLICATIONS,
-  applicationSteps,
   formatShortDate,
   isActive,
   openSlots,
   statusLabel,
 } from "../lib/applications";
 import { petPhotoUrl } from "../lib/petPhoto";
+import { applicationStepsWithVisits, applicationProgressLabel } from "../lib/visitSteps";
 
 const SPECIES_LABEL = { cat: "Cat", dog: "Dog" };
 
@@ -38,8 +39,16 @@ function slotCopy(used, open) {
   };
 }
 
-function AdoptionCard({ application, pet, busy, onCancel, onDemoStatus }) {
+function AdoptionCard({
+  application,
+  pet,
+  visits,
+  busy,
+  onCancel,
+  onDemoStatus,
+}) {
   const photo = petPhotoUrl(pet.photo_path);
+  const hasVisits = visits.some((visit) => visit.status !== "cancelled");
 
   return (
     <section
@@ -63,11 +72,17 @@ function AdoptionCard({ application, pet, busy, onCancel, onDemoStatus }) {
           </span>
         </div>
         <span className="rounded-full bg-white px-[18px] py-2 text-sm font-semibold">
-          {statusLabel(application.status)}
+          {applicationProgressLabel(application, visits)}
         </span>
       </div>
 
-      <ApplicationStepper steps={applicationSteps(application)} />
+      <ApplicationStepper
+        steps={applicationStepsWithVisits(
+          application,
+          visits,
+          pet.shelter.name,
+        )}
+      />
 
       <div className="flex flex-wrap gap-3">
         <Link
@@ -83,6 +98,15 @@ function AdoptionCard({ application, pet, busy, onCancel, onDemoStatus }) {
             className="flex min-h-[52px] items-center rounded-2xl border-2 border-ink bg-white px-6 font-semibold text-ink"
           >
             Schedule a visit
+          </Link>
+        )}
+        {hasVisits && (
+          <Link
+            to="/appointments"
+            aria-label={`View visits for ${pet.name}`}
+            className="flex min-h-[52px] items-center rounded-2xl border-2 border-ink bg-white px-6 font-semibold text-ink"
+          >
+            View visits
           </Link>
         )}
         <button
@@ -115,6 +139,7 @@ export default function Adoptions() {
     cancel,
     demoSetStatus,
   } = useApplications();
+  const { visitsFor, reload: reloadVisits } = useAppointments();
   const { pets, loading: petsLoading, error: petsError } = usePets();
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState("");
@@ -132,6 +157,8 @@ export default function Adoptions() {
     setBusyId(applicationId);
     setMessage("");
     const result = await action();
+    // Cancelling or declining an application cancels its visits in the database.
+    await reloadVisits();
     setBusyId(null);
     if (result.error) setMessage(result.error);
   }
@@ -183,6 +210,7 @@ export default function Adoptions() {
                 key={application.id}
                 application={application}
                 pet={pet}
+                visits={visitsFor(application.id)}
                 busy={busyId === application.id}
                 onCancel={cancelApplication}
                 onDemoStatus={changeStatus}

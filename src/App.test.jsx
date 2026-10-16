@@ -36,6 +36,14 @@ vi.mock("./lib/demo", () => ({ demoToolsEnabled: true }));
 vi.mock('./context/AppointmentsProvider', () => ({
   AppointmentsProvider: ({ children }) => children,
 }))
+vi.mock("./hooks/useAppointments", () => ({
+  useAppointments: () => ({
+    appointments: [],
+    visitsFor: () => [],
+    reload: () => Promise.resolve(),
+    loading: false,
+  }),
+}));
 
 
 const application = (id, petId, status = "pending") => ({
