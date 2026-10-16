@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
@@ -44,7 +50,6 @@ const withApplications = (applications) => ({
 const toggleFavorite = vi.fn();
 const apply = vi.fn();
 const cancel = vi.fn();
-
 
 const loggedOut = {
   user: null,
@@ -584,6 +589,147 @@ describe("App routing", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel application" }));
     await waitFor(() => expect(cancel).toHaveBeenCalledWith("a9"));
   });
+  it("lists the active applications with their progress", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([
+        application("a1", "p1", "in_review"),
+        application("a2", "p2", "pending"),
+      ]),
+    );
+    renderAt("/adoptions");
+
+    expect(
+      screen.getByRole("heading", { name: "My adoptions" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2 of 3")).toBeInTheDocument();
+    expect(screen.getByText("1 slot open")).toBeInTheDocument();
+
+    const max = within(
+      screen.getByRole("region", { name: "Application for Max" }),
+    );
+    expect(max.getByText("Meet and greet next")).toBeInTheDocument();
+    expect(max.getByText("Schedule it with the shelter")).toBeInTheDocument();
+
+    const rocky = within(
+      screen.getByRole("region", { name: "Application for Rocky" }),
+    );
+    expect(rocky.getByText("Under review")).toBeInTheDocument();
+    expect(rocky.getByText(/waiting for the shelter/)).toBeInTheDocument();
+  });
+
+  it("cancels an application from My adoptions", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p1")]),
+    );
+    renderAt("/adoptions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel application for Max" }),
+    );
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith("a1"));
+  });
+
+  it("shows why a cancel failed", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    cancel.mockResolvedValue({ error: "Nope, try later" });
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p1")]),
+    );
+    renderAt("/adoptions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel application for Max" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nope, try later",
+    );
+  });
+
+  it("shows an empty state when there are no applications", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/adoptions");
+
+    expect(screen.getByText("0 of 3")).toBeInTheDocument();
+    expect(screen.getByText("No applications yet")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse pets" })).toHaveAttribute(
+      "href",
+      "/explore",
+    );
+  });
+
+  it("says when all 3 slots are in use", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([
+        application("a1", "p1"),
+        application("a2", "p2"),
+        application("a3", "p3"),
+      ]),
+    );
+    renderAt("/adoptions");
+
+    expect(screen.getByText("3 of 3")).toBeInTheDocument();
+    expect(screen.getByText("All 3 slots in use")).toBeInTheDocument();
+  });
+
+  it("lists declined and cancelled applications as past ones", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([
+        application("a1", "p1", "rejected"),
+        application("a2", "p2", "cancelled"),
+      ]),
+    );
+    renderAt("/adoptions");
+
+    const past = within(
+      screen.getByRole("region", { name: "Past applications" }),
+    );
+    expect(past.getByText(/Declined by the shelter/)).toBeInTheDocument();
+    expect(past.getByText(/Cancelled/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Application for Max" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a loading message while applications load", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue({
+      ...withApplications([]),
+      loading: true,
+    });
+    renderAt("/adoptions");
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /loading your applications/i,
+    );
+  });
+  it("greys out pets the user has already applied for", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p2")]),
+    );
+    renderAt("/explore");
+
+    expect(
+      screen.getByRole("link", { name: "View Rocky, application sent" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Application sent")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Max" })).toBeInTheDocument();
+  });
+
+  it("shows a pet as available again after the application is cancelled", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a1", "p2", "cancelled")]),
+    );
+    renderAt("/explore");
+
+    expect(screen.queryByText("Application sent")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "View Rocky" }),
+    ).toBeInTheDocument();
+  });
 });
-
-

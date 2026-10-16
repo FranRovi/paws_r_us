@@ -4,6 +4,11 @@ import {
   applyBlockReason,
   canApply,
   waitingPosition,
+  openSlots,
+  statusLabel,
+  applicationSteps,
+  formatShortDate,
+  activeApplicationFor,
 } from "./applications";
 
 let nextId = 0;
@@ -105,5 +110,89 @@ describe("waitingPosition", () => {
     const list = [a, b];
     waitingPosition(list, a.id);
     expect(list).toEqual([a, b]);
+  });
+  describe("openSlots", () => {
+    it("counts the free slots", () => {
+      expect(openSlots([])).toBe(3);
+      expect(openSlots([app("pending"), app("cancelled")])).toBe(2);
+      expect(
+        openSlots([app("pending"), app("in_review"), app("accepted")]),
+      ).toBe(0);
+    });
+  });
+
+  describe("statusLabel", () => {
+    it("uses plain words for every status", () => {
+      expect(statusLabel("pending")).toBe("Under review");
+      expect(statusLabel("in_review")).toBe("Meet and greet next");
+      expect(statusLabel("accepted")).toBe("Adoption approved");
+      expect(statusLabel("rejected")).toBe("Declined by the shelter");
+      expect(statusLabel("cancelled")).toBe("Cancelled");
+    });
+  });
+
+  describe("formatShortDate", () => {
+    it("formats a date as month and day", () => {
+      expect(formatShortDate("2026-10-06T12:00:00Z")).toBe("Oct 6");
+    });
+  });
+
+  describe("applicationSteps", () => {
+    const states = (status) =>
+      applicationSteps({ status, created_at: "2026-10-06T12:00:00Z" }).map(
+        (s) => s.state,
+      );
+
+    it("starts at Applied while the shelter has not answered", () => {
+      expect(states("pending")).toEqual(["now", "todo", "todo", "todo"]);
+      const [applied, meet] = applicationSteps({
+        status: "pending",
+        created_at: "2026-10-06T12:00:00Z",
+      });
+      expect(applied.detail).toBe("Sent Oct 6, waiting for the shelter");
+      expect(meet.detail).toBe("Opens once the shelter accepts");
+    });
+
+    it("moves to the meet and greet once the shelter picks it up", () => {
+      expect(states("in_review")).toEqual(["done", "now", "todo", "todo"]);
+    });
+
+    it("marks every step done when the adoption is approved", () => {
+      expect(states("accepted")).toEqual(["done", "done", "done", "done"]);
+    });
+
+    it("always returns the four steps in order", () => {
+      const steps = applicationSteps({
+        status: "pending",
+        created_at: "2026-10-06T12:00:00Z",
+      });
+      expect(steps.map((s) => s.label)).toEqual([
+        "Applied",
+        "Meet and greet",
+        "Home visit",
+        "Decision",
+      ]);
+    });
+  });
+  describe("activeApplicationFor", () => {
+    it("finds the active application for a pet", () => {
+      const mine = app("pending", "max");
+      expect(activeApplicationFor([app("pending", "rocky"), mine], "max")).toBe(
+        mine,
+      );
+    });
+
+    it("ignores cancelled and rejected applications", () => {
+      expect(
+        activeApplicationFor([app("cancelled", "max")], "max"),
+      ).toBeUndefined();
+      expect(
+        activeApplicationFor([app("rejected", "max")], "max"),
+      ).toBeUndefined();
+    });
+
+    it("returns nothing when the user never applied", () => {
+      expect(activeApplicationFor([], "max")).toBeUndefined();
+    });
   });
 });

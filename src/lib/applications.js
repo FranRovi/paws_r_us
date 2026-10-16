@@ -41,3 +41,92 @@ export function waitingPosition(petApplications, applicationId) {
   );
   return index === -1 ? null : index + 1;
 }
+
+// How many of the user's 3 slots are free.
+export function openSlots(applications) {
+  return Math.max(0, MAX_ACTIVE_APPLICATIONS - activeCount(applications));
+}
+
+export function formatShortDate(iso) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export function statusLabel(status) {
+  const labels = {
+    pending: "Under review",
+    in_review: "Meet and greet next",
+    accepted: "Adoption approved",
+    rejected: "Declined by the shelter",
+    cancelled: "Cancelled",
+  };
+  return labels[status] ?? status;
+}
+
+// Which of the 4 steps (0 to 3) is the current one; 4 means all are done.
+const CURRENT_STEP = { pending: 0, in_review: 1, accepted: 4 };
+
+// The 4-step progress of an application:
+// Applied, Meet and greet, Home visit, Decision.
+// Each step is 'done', 'now' or 'todo', with a short detail line.
+export function applicationSteps(application) {
+  const current = CURRENT_STEP[application.status] ?? 0;
+  const sent = `Sent ${formatShortDate(application.created_at)}`;
+
+  const steps = [
+    {
+      key: "applied",
+      label: "Applied",
+      detail: {
+        done: sent,
+        now: `${sent}, waiting for the shelter`,
+        todo: sent,
+      },
+    },
+    {
+      key: "meet",
+      label: "Meet and greet",
+      detail: {
+        done: "Completed",
+        now: "Schedule it with the shelter",
+        todo: "Opens once the shelter accepts",
+      },
+    },
+    {
+      key: "home",
+      label: "Home visit",
+      detail: {
+        done: "Completed",
+        now: "Schedule it with the shelter",
+        todo: "Scheduled after the meet and greet",
+      },
+    },
+    {
+      key: "decision",
+      label: "Decision",
+      detail: {
+        done: "The shelter approved your adoption",
+        now: "Waiting for the shelter",
+        todo: "The shelter confirms or declines",
+      },
+    },
+  ];
+
+  return steps.map((step, index) => {
+    const state = index < current ? "done" : index === current ? "now" : "todo";
+    return {
+      key: step.key,
+      label: step.label,
+      state,
+      detail: step.detail[state],
+    };
+  });
+}
+
+export function activeApplicationFor(applications, petId) {
+  return applications.find(
+    (application) => application.pet_id === petId && isActive(application),
+  );
+}
