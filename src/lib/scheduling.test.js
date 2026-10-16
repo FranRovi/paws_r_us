@@ -5,12 +5,17 @@ import {
   bookBlockReason,
   daySlots,
   defaultKind,
+  firstBookableMonth,
   formatSlotTime,
   formatVisitDate,
   generateSlots,
   groupVisits,
+  isBookableDay,
   isOpenDay,
   liveVisit,
+  maxMonthOffset,
+  monthCells,
+  monthTitle,
   visitSummary,
   visitTabs,
 } from './scheduling'
@@ -171,5 +176,43 @@ describe('friendlyAppointmentError', () => {
     expect(friendlyAppointmentError({ message: 'boom' })).toBe(
       'We could not complete that. Please try again.',
     )
+  })
+  describe('calendar', () => {
+    it('knows which days can be booked', () => {
+      expect(isBookableDay(new Date(2026, 9, 16), now)).toBe(true) // today, times left
+      expect(isBookableDay(new Date(2026, 9, 16), new Date(2026, 9, 16, 18, 0))).toBe(false)
+      expect(isBookableDay(new Date(2026, 9, 18), now)).toBe(false) // Sunday
+      expect(isBookableDay(new Date(2026, 11, 15), now)).toBe(true) // last day of the window
+      expect(isBookableDay(new Date(2026, 11, 16), now)).toBe(false) // beyond 60 days
+    })
+
+    it('lets the calendar go two months ahead', () => {
+      expect(maxMonthOffset(now)).toBe(2) // October -> December
+    })
+
+    it('builds the current month in whole weeks', () => {
+      const cells = monthCells(now, 0)
+      expect(cells).toHaveLength(35)
+      expect(cells[0].inMonth).toBe(false) // Sun Sep 27
+      expect(cells.filter((c) => c.inMonth)).toHaveLength(31)
+      expect(cells.filter((c) => c.enabled)).toHaveLength(14)
+      const oct12 = cells.find((c) => c.inMonth && c.date.getDate() === 12)
+      expect(oct12.enabled).toBe(false) // past
+    })
+
+    it('enables the open days of next month and stops at the window end', () => {
+      expect(monthCells(now, 1).filter((c) => c.enabled)).toHaveLength(25) // November, no Sundays
+      expect(monthCells(now, 2).filter((c) => c.enabled)).toHaveLength(13) // Dec 1-15, no Sundays
+    })
+
+    it('titles each month', () => {
+      expect(monthTitle(now, 0)).toBe('October 2026')
+      expect(monthTitle(now, 1)).toBe('November 2026')
+    })
+
+    it('opens on the first month that still has days', () => {
+      expect(firstBookableMonth(now)).toBe(0)
+      expect(firstBookableMonth(new Date(2026, 9, 31, 18, 0))).toBe(1)
+    })
   })
 })

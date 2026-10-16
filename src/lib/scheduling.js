@@ -133,3 +133,55 @@ export function groupVisits(appointments, now = new Date()) {
     .sort((a, b) => time(b) - time(a))
   return { upcoming, past }
 }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+// How far ahead a visit can be booked.
+export const BOOKING_HORIZON_DAYS = 60
+
+// Open day, inside the booking window, with at least one time left.
+export function isBookableDay(day, now = new Date(), horizonDays = BOOKING_HORIZON_DAYS) {
+  const today = startOfDay(now)
+  const last = new Date(today.getFullYear(), today.getMonth(), today.getDate() + horizonDays)
+  const date = startOfDay(day)
+  if (date.getTime() > last.getTime()) return false
+  if (!isOpenDay(date)) return false
+  return daySlots(date, [], now).some((slot) => !slot.past)
+}
+
+// How many months ahead the calendar can go (0 = only the current month).
+export function maxMonthOffset(now = new Date(), horizonDays = BOOKING_HORIZON_DAYS) {
+  const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + horizonDays)
+  return (last.getFullYear() - now.getFullYear()) * 12 + (last.getMonth() - now.getMonth())
+}
+
+// The grid for one month, in whole weeks starting on Sunday.
+// Cells outside the month have inMonth: false (the page leaves them blank).
+export function monthCells(now = new Date(), offset = 0, horizonDays = BOOKING_HORIZON_DAYS) {
+  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  const lead = first.getDay()
+  const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+  const total = Math.ceil((lead + daysInMonth) / 7) * 7
+  return Array.from({ length: total }, (_, i) => {
+    const date = new Date(first.getFullYear(), first.getMonth(), 1 - lead + i)
+    const inMonth = date.getMonth() === first.getMonth()
+    return { date, inMonth, enabled: inMonth && isBookableDay(date, now, horizonDays) }
+  })
+}
+
+export function monthTitle(now = new Date(), offset = 0) {
+  const date = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`
+}
+
+// The first month that still has a day to book (so the calendar never opens empty).
+export function firstBookableMonth(now = new Date(), horizonDays = BOOKING_HORIZON_DAYS) {
+  const max = maxMonthOffset(now, horizonDays)
+  for (let offset = 0; offset <= max; offset += 1) {
+    if (monthCells(now, offset, horizonDays).some((cell) => cell.enabled)) return offset
+  }
+  return 0
+}

@@ -76,6 +76,15 @@ function AdoptionCard({ application, pet, busy, onCancel, onDemoStatus }) {
         >
           View {pet.name}
         </Link>
+        {application.status !== "pending" && (
+          <Link
+            to={`/adoptions/${application.id}/schedule`}
+            aria-label={`Schedule a visit for ${pet.name}`}
+            className="flex min-h-[52px] items-center rounded-2xl border-2 border-ink bg-white px-6 font-semibold text-ink"
+          >
+            Schedule a visit
+          </Link>
+        )}
         <button
           type="button"
           disabled={busy}
