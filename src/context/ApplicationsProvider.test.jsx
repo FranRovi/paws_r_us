@@ -16,9 +16,9 @@ vi.mock("../lib/supabase", () => ({
     from: () => ({
       select: () => ({ eq: () => ({ order: db.list }) }),
       insert: () => ({ select: () => ({ single: db.insert }) }),
-      update: () => ({ eq: () => ({ select: () => ({ single: db.update }) }) }),
-      rpc: db.rpc,
+      update: () => ({ eq: () => ({ select: () => ({ single: db.update }) }) }), 
     }),
+    rpc: db.rpc,
   },
 }));
 
@@ -27,7 +27,7 @@ vi.mock("../hooks/useAuth", () => ({
 }));
 
 function Probe() {
-  const { applications, loading, apply, cancel } = useApplications();
+  const { applications, loading, apply, cancel, demoSetStatus } = useApplications();
   const [message, setMessage] = useState("");
   return (
     <>

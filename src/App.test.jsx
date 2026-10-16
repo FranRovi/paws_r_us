@@ -33,6 +33,10 @@ vi.mock("./context/ApplicationsProvider", () => ({
   default: ({ children }) => children,
 }));
 vi.mock("./lib/demo", () => ({ demoToolsEnabled: true }));
+vi.mock('./context/AppointmentsProvider', () => ({
+  AppointmentsProvider: ({ children }) => children,
+}))
+
 
 const application = (id, petId, status = "pending") => ({
   id,
