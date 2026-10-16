@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
@@ -7,6 +7,8 @@ import { useProfile } from "./hooks/useProfile";
 import { usePets } from "./hooks/usePets";
 import { usePet } from "./hooks/usePet";
 import { useFavorites } from "./hooks/useFavorites";
+import { useApplications } from "./hooks/useApplications";
+import { useWaitingList } from "./hooks/useWaitingList";
 
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("./hooks/useProfile", () => ({ useProfile: vi.fn() }));
@@ -19,8 +21,30 @@ vi.mock("./hooks/useFavorites", () => ({ useFavorites: vi.fn() }));
 vi.mock("./context/FavoritesProvider", () => ({
   default: ({ children }) => children,
 }));
+vi.mock("./hooks/useApplications", () => ({ useApplications: vi.fn() }));
+vi.mock("./hooks/useWaitingList", () => ({ useWaitingList: vi.fn() }));
+vi.mock("./context/ApplicationsProvider", () => ({
+  default: ({ children }) => children,
+}));
+
+const application = (id, petId, status = "pending") => ({
+  id,
+  pet_id: petId,
+  status,
+  created_at: "2026-10-01T10:00:00Z",
+});
+const withApplications = (applications) => ({
+  applications,
+  loading: false,
+  error: "",
+  apply,
+  cancel,
+});
 
 const toggleFavorite = vi.fn();
+const apply = vi.fn();
+const cancel = vi.fn();
+
 
 const loggedOut = {
   user: null,
@@ -98,6 +122,12 @@ beforeEach(() => {
   usePets.mockReturnValue({ pets, loading: false, error: "" });
   usePet.mockReturnValue({ pet: petDetail, loading: false, error: "" });
   toggleFavorite.mockClear();
+  apply.mockReset();
+  cancel.mockReset();
+  apply.mockResolvedValue({});
+  cancel.mockResolvedValue({});
+  useApplications.mockReturnValue(withApplications([]));
+  useWaitingList.mockReturnValue({ list: [], loading: false, error: "" });
   useFavorites.mockReturnValue({
     loading: false,
     isFavorite: (id) => id === "p1",
@@ -351,7 +381,7 @@ describe("App routing", () => {
     expect(
       screen.getByText("You join Max's waiting list."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Adopt Me" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adopt Me" })).toBeEnabled();
     expect(
       screen.getByRole("link", { name: /back to results/i }),
     ).toHaveAttribute("href", "/explore");
@@ -454,4 +484,106 @@ describe("App routing", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/loading favorites/i);
     expect(screen.queryByText("No favorites yet")).not.toBeInTheDocument();
   });
+  it("starts an adoption after the user confirms", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/pets/p1");
+
+    expect(screen.getByText("No one yet")).toBeInTheDocument();
+    expect(
+      screen.getByText("0 of 3 adoption slots in use"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt Me" }));
+    expect(
+      screen.getByRole("dialog", { name: /start the adoption for max/i }),
+    ).toBeInTheDocument();
+    expect(apply).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Yes, start adoption" }),
+    );
+    await waitFor(() => expect(apply).toHaveBeenCalledWith("p1"));
+  });
+
+  it("does not apply when the user chooses Not now", () => {
+    useAuth.mockReturnValue(loggedIn);
+    renderAt("/pets/p1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt Me" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it("shows the reason when the application could not be sent", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    apply.mockResolvedValue({ error: "Nope, try later" });
+    renderAt("/pets/p1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt Me" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Yes, start adoption" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nope, try later",
+    );
+  });
+
+  it("blocks Adopt Me when 3 applications are active", () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([
+        application("a1", "p2"),
+        application("a2", "p3"),
+        application("a3", "p4", "in_review"),
+      ]),
+    );
+    renderAt("/pets/p1");
+
+    expect(screen.getByRole("button", { name: "Adopt Me" })).toBeDisabled();
+    expect(
+      screen.getByText(/already have 3 active applications/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Go to My adoptions" }),
+    ).toHaveAttribute("href", "/adoptions");
+    expect(
+      screen.getByText("3 of 3 adoption slots in use"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the sent application, the position, and lets the user cancel", async () => {
+    useAuth.mockReturnValue(loggedIn);
+    useApplications.mockReturnValue(
+      withApplications([application("a9", "p1")]),
+    );
+    useWaitingList.mockReturnValue({
+      list: [
+        { id: "a5", status: "pending", created_at: "2026-09-30T10:00:00Z" },
+        { id: "a9", status: "pending", created_at: "2026-10-01T10:00:00Z" },
+      ],
+      loading: false,
+      error: "",
+    });
+    renderAt("/pets/p1");
+
+    expect(screen.getByRole("status")).toHaveTextContent("Application sent");
+    expect(screen.getByText("2 people")).toBeInTheDocument();
+    expect(
+      screen.getByText(/You are number 2 on Max's waiting list\./),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("1 of 3 adoption slots in use"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Adopt Me" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel application" }));
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith("a9"));
+  });
 });
+
+

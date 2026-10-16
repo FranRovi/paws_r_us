@@ -4,6 +4,9 @@ import { usePet } from "../hooks/usePet";
 import { formatAge } from "../lib/pets";
 import { petPhotoUrl } from "../lib/petPhoto";
 import FavoriteButton from "../components/FavoriteButton";
+import AdoptPanel from "../components/AdoptPanel";
+import { useApplications } from "../hooks/useApplications";
+import { useWaitingList } from "../hooks/useWaitingList";
 
 const SPECIES_LABEL = { cat: "Cat", dog: "Dog" };
 const SEX_LABEL = { female: "Female", male: "Male" };
@@ -57,9 +60,19 @@ function Stat({ label, children }) {
   );
 }
 
+function waitingText(count) {
+  if (count === 0) return "No one yet";
+  return count === 1 ? "1 person" : `${count} people`;
+}
+
 export default function PetDetail() {
   const { id } = useParams();
   const { pet, loading, error } = usePet(id);
+  const { applications } = useApplications();
+  const { list: waitingList, loading: waitingLoading } = useWaitingList(
+    id,
+    applications,
+  );
 
   const shell = "flex flex-col gap-5 rounded-[40px] bg-white px-8 pb-10 pt-6";
 
@@ -146,6 +159,9 @@ export default function PetDetail() {
             <Stat label="Energy level">
               <EnergyLevel level={pet.energy} />
             </Stat>
+            <Stat label="Waiting list">
+              {waitingLoading ? "…" : waitingText(waitingList.length)}
+            </Stat>
             <Stat label="Visits needed">2 (meet and home)</Stat>
           </div>
 
@@ -197,20 +213,8 @@ export default function PetDetail() {
               </a>
             )}
           </div>
-
-          {/* Temporary: becomes the real Adopt Me flow in Phase 6 */}
-          <button
-            type="button"
-            disabled
-            aria-describedby="adopt-note"
-            className="min-h-[60px] cursor-not-allowed rounded-2xl bg-[#E4DACB] text-xl font-extrabold text-muted"
-          >
-            Adopt Me
-          </button>
-          <p id="adopt-note" className="text-sm leading-normal">
-            Adoption applications will open soon.
-          </p>
         </aside>
+        <AdoptPanel pet={pet} waitingList={waitingList} />
         {pet.photo_credit && (
           <span className="relative rounded-full bg-white/85 px-3.5 py-1.5 text-[13px]">
             {pet.photo_credit}
