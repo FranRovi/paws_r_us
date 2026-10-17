@@ -13,6 +13,7 @@ import Favorites from "./pages/Favorites";
 import Adoptions from "./pages/Adoptions";
 import ScheduleVisit from "./pages/ScheduleVisit";
 import Appointments from "./pages/Appointments";
+import Notifications from './pages/Notifications';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/adoptions/:applicationId/schedule" element={<ScheduleVisit />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/notifications" element={< Notifications />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
