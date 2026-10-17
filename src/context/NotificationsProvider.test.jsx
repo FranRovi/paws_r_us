@@ -4,7 +4,13 @@ import NotificationsProvider from "./NotificationsProvider";
 import { useNotifications } from "../hooks/useNotifications";
 
 const db = vi.hoisted(() => {
-  const state = { rows: [], loadError: null, writeError: null, calls: [] };
+  const state = {
+    rows: [],
+    loadError: null,
+    writeError: null,
+    calls: [],
+    handlers: {},
+  };
 
   function chain(op, payload) {
     const filters = [];
@@ -37,11 +43,28 @@ const db = vi.hoisted(() => {
     delete: () => chain("delete"),
   }));
 
-  return { state, from };
+  const channel = vi.fn(() => {
+    const channelObject = {
+      on: vi.fn((type, filter, callback) => {
+        state.handlers[filter.event] = { filter, callback };
+        return channelObject;
+      }),
+      subscribe: vi.fn(() => channelObject),
+    };
+    return channelObject;
+  });
+
+  const removeChannel = vi.fn();
+
+  return { state, from, channel, removeChannel };
 });
 
 vi.mock("../lib/supabase", () => {
-  const supabase = { from: db.from };
+  const supabase = {
+    from: db.from,
+    channel: db.channel,
+    removeChannel: db.removeChannel,
+  };
   return { supabase, default: supabase };
 });
 
@@ -82,6 +105,9 @@ beforeEach(() => {
   db.state.loadError = null;
   db.state.writeError = null;
   db.state.calls = [];
+  db.state.handlers = {};
+  db.channel.mockClear();
+  db.removeChannel.mockClear();
 });
 
 describe("NotificationsProvider", () => {
@@ -164,5 +190,53 @@ describe("NotificationsProvider", () => {
       "We could not update your notifications. Please try again.",
     );
     expect(result.current.unread).toBe(2);
+  });
+});
+
+describe("NotificationsProvider realtime", () => {
+  it("listens to the signed-in user's notifications only", async () => {
+    await loaded();
+    expect(db.channel).toHaveBeenCalledWith("notifications:u1");
+    expect(db.state.handlers.INSERT.filter).toMatchObject({
+      schema: "public",
+      table: "notifications",
+      filter: "user_id=eq.u1",
+    });
+    expect(db.state.handlers.UPDATE.filter.filter).toBe("user_id=eq.u1");
+  });
+
+  it("adds a new notification at the top, once", async () => {
+    const { result } = await loaded();
+    const incoming = row("n4", null, "2026-10-17T13:00:00Z");
+    act(() => {
+      db.state.handlers.INSERT.callback({ new: incoming });
+    });
+    act(() => {
+      db.state.handlers.INSERT.callback({ new: incoming });
+    });
+    expect(result.current.notifications.map((n) => n.id)).toEqual([
+      "n4",
+      "n1",
+      "n2",
+      "n3",
+    ]);
+    expect(result.current.unread).toBe(3);
+  });
+
+  it("applies a change made elsewhere, like a read mark", async () => {
+    const { result } = await loaded();
+    act(() => {
+      db.state.handlers.UPDATE.callback({
+        new: row("n1", "2026-10-17T14:00:00Z", "2026-10-17T12:00:00Z"),
+      });
+    });
+    expect(result.current.unread).toBe(1);
+    expect(result.current.notifications).toHaveLength(3);
+  });
+
+  it("stops listening when the provider goes away", async () => {
+    const { unmount } = await loaded();
+    unmount();
+    expect(db.removeChannel).toHaveBeenCalledTimes(1);
   });
 });

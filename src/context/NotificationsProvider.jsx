@@ -41,6 +41,38 @@ export default function NotificationsProvider({ children }) {
     reload();
   }, [reload]);
 
+
+  // New notifications (and read marks made in another tab) arrive live.
+  // Both handlers are safe to run twice, so they never fight our own updates.
+  useEffect(() => {
+    if (!userId) return undefined;
+
+    const mine = {
+      schema: "public",
+      table: "notifications",
+      filter: `user_id=eq.${userId}`,
+    };
+
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on("postgres_changes", { event: "INSERT", ...mine }, (payload) => {
+        const item = toNotification(payload.new);
+        setNotifications((prev) =>
+          prev.some((n) => n.id === item.id) ? prev : [item, ...prev].slice(0, 100),
+        );
+      })
+      .on("postgres_changes", { event: "UPDATE", ...mine }, (payload) => {
+        const item = toNotification(payload.new);
+        setNotifications((prev) => prev.map((n) => (n.id === item.id ? item : n)));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+  
+
   // Every action updates the screen first, then saves.
   // If saving fails, we reload so the screen matches the database again.
   const save = useCallback(
