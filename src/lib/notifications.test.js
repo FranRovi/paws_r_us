@@ -8,6 +8,7 @@ import {
   unreadCount,
   unreadLabel,
   whenLabel,
+  badgeText
 } from "./notifications";
 
 const NOW = new Date(2026, 9, 17, 12, 0);
@@ -116,5 +117,13 @@ describe("groupByDay", () => {
 
   it("returns an empty list for no notifications", () => {
     expect(groupByDay([], NOW)).toEqual([]);
+  });
+
+  describe("badgeText", () => {
+  it("shows the number and caps it at 99+", () => {
+    expect(badgeText(3)).toBe("3");
+    expect(badgeText(99)).toBe("99");
+    expect(badgeText(100)).toBe("99+");
+    });
   });
 });

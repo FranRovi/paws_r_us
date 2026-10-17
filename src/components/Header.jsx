@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 import PawLogo from "./PawLogo";
 import { useAuth } from "../hooks/useAuth";
+import NotificationBell from "./NotificationBell";
 
 const NAV_LINKS = [
   { to: "/explore", label: "Explore" },
@@ -40,7 +41,8 @@ export default function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-3.5">
-          <Link
+          <NotificationBell />
+          {/* <Link
             to="/notifications"
             aria-label={
               unread > 0
@@ -68,7 +70,7 @@ export default function Header() {
                 {unread}
               </span>
             )}
-          </Link>
+          </Link> */}
 
           <Link
             to="/profile"

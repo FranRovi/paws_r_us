@@ -9,9 +9,9 @@ import NotificationsProvider from "../context/NotificationsProvider";
 export default function AppLayout() {
   return (
     <OrangeBackground>
-      <Header />
-      <main className="mx-auto mb-12 mt-6 w-full max-w-[1440px] px-10">
-        <NotificationsProvider>
+      <NotificationsProvider>
+        <Header />
+        <main className="mx-auto mb-12 mt-6 w-full max-w-[1440px] px-10">
           <FavoritesProvider>
             <ApplicationsProvider>
               <AppointmentsProvider>
@@ -19,8 +19,8 @@ export default function AppLayout() {
               </AppointmentsProvider>
             </ApplicationsProvider>
           </FavoritesProvider>
-        </NotificationsProvider>
-      </main>
+        </main>
+      </NotificationsProvider>
     </OrangeBackground>
   );
 }

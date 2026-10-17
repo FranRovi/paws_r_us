@@ -47,6 +47,19 @@ vi.mock("./hooks/useAppointments", () => ({
 vi.mock("./context/NotificationsProvider", () => ({
   default: ({ children }) => children,
 }));
+vi.mock("./hooks/useNotifications", () => ({
+  useNotifications: () => ({
+    notifications: [],
+    unread: 0,
+    loading: false,
+    error: null,
+    markRead: () => Promise.resolve({}),
+    markAllRead: () => Promise.resolve({}),
+    remove: () => Promise.resolve({}),
+    removeAll: () => Promise.resolve({}),
+    reload: () => Promise.resolve(),
+  }),
+}));
 
 
 const application = (id, petId, status = "pending") => ({

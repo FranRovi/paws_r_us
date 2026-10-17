@@ -53,6 +53,10 @@ export function unreadLabel(count) {
     : "Notifications, none unread";
 }
 
+export function badgeText(count) {
+  return count > 99 ? "99+" : String(count);
+}
+
 export function filterNotifications(list, filter) {
   return filter === "unread" ? list.filter((n) => !n.read) : list;
 }
