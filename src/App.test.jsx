@@ -44,6 +44,9 @@ vi.mock("./hooks/useAppointments", () => ({
     loading: false,
   }),
 }));
+vi.mock("./context/NotificationsProvider", () => ({
+  default: ({ children }) => children,
+}));
 
 
 const application = (id, petId, status = "pending") => ({
