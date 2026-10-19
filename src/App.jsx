@@ -14,6 +14,7 @@ import Adoptions from "./pages/Adoptions";
 import ScheduleVisit from "./pages/ScheduleVisit";
 import Appointments from "./pages/Appointments";
 import Notifications from './pages/Notifications';
+import Messages from './pages/Messages';
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={< Notifications />} />
+          <Route path='/messages' element={<Messages />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
