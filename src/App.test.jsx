@@ -63,6 +63,9 @@ vi.mock("./hooks/useNotifications", () => ({
 vi.mock("./context/MessagesProvider", () => ({
   default: ({ children }) => children,
 }));
+vi.mock("./hooks/useMessages", () => ({
+  useMessages: () => ({ conversations: [], messages: [], send: vi.fn() }),
+}));
 
 
 const application = (id, petId, status = "pending") => ({
@@ -654,7 +657,7 @@ describe("App routing", () => {
     expect(rocky.getByText(/waiting for the shelter/)).toBeInTheDocument();
   });
 
-  it("cancels an application from My adoptions", async () => {
+  it("opens the message drawer for a pet", async () => {
     useAuth.mockReturnValue(loggedIn);
     useApplications.mockReturnValue(
       withApplications([application("a1", "p1")]),
@@ -662,9 +665,9 @@ describe("App routing", () => {
     renderAt("/adoptions");
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Cancel application for Max" }),
+      await screen.findByRole("button", { name: "Message shelter about Max" }),
     );
-    await waitFor(() => expect(cancel).toHaveBeenCalledWith("a1"));
+    expect(screen.getByRole("dialog", { name: /Message / })).not.toBeNull();
   });
 
   it("shows why a cancel failed", async () => {

@@ -7,6 +7,8 @@ import FavoriteButton from "../components/FavoriteButton";
 import AdoptPanel from "../components/AdoptPanel";
 import { useApplications } from "../hooks/useApplications";
 import { useWaitingList } from "../hooks/useWaitingList";
+import { useState } from "react";
+import MessageDrawer from "../components/MessageDrawer";
 
 const SPECIES_LABEL = { cat: "Cat", dog: "Dog" };
 const SEX_LABEL = { female: "Female", male: "Male" };
@@ -66,6 +68,7 @@ function waitingText(count) {
 }
 
 export default function PetDetail() {
+  const [messaging, setMessaging] = useState(false);
   const { id } = useParams();
   const { pet, loading, error } = usePet(id);
   const { applications } = useApplications();
@@ -137,6 +140,16 @@ export default function PetDetail() {
             <PawIcon className="size-24 fill-brown/40" />
           </span>
         )}
+        {pet.photo_credit && (
+          <span className="relative rounded-full bg-white/85 px-3.5 py-1.5 text-[13px]">
+            {pet.photo_credit}
+          </span>
+        )}
+        <FavoriteButton
+          pet={pet}
+          size="lg"
+          className="absolute right-5 top-5"
+        />
       </div>
 
       <div className="flex flex-wrap items-start gap-8">
@@ -213,19 +226,20 @@ export default function PetDetail() {
               </a>
             )}
           </div>
+          <AdoptPanel pet={pet} waitingList={waitingList} />
+          <button
+            type="button"
+            onClick={() => setMessaging(true)}
+            className="min-h-[52px] cursor-pointer rounded-2xl border-2 border-ink bg-white px-6 font-semibold text-ink"
+          >
+            Message shelter
+          </button>
         </aside>
-        <AdoptPanel pet={pet} waitingList={waitingList} />
-        {pet.photo_credit && (
-          <span className="relative rounded-full bg-white/85 px-3.5 py-1.5 text-[13px]">
-            {pet.photo_credit}
-          </span>
-        )}
-        <FavoriteButton
-          pet={pet}
-          size="lg"
-          className="absolute right-5 top-5"
-        />
       </div>
+
+      {messaging && (
+        <MessageDrawer pet={pet} onClose={() => setMessaging(false)} />
+      )}
     </section>
   );
 }

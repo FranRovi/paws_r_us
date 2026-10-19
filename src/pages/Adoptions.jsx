@@ -4,6 +4,7 @@ import ApplicationStepper from "../components/ApplicationStepper";
 import PageCard from "../components/PageCard";
 import PawIcon from "../components/PawIcon";
 import DemoControls from "../components/DemoControls";
+import MessageDrawer from "../components/MessageDrawer";
 import { demoToolsEnabled } from "../lib/demo";
 import { useApplications } from "../hooks/useApplications";
 import { useAppointments } from "../hooks/useAppointments";
@@ -46,6 +47,7 @@ function AdoptionCard({
   busy,
   onCancel,
   onDemoStatus,
+  onMessage,
 }) {
   const photo = petPhotoUrl(pet.photo_path);
   const hasVisits = visits.some((visit) => visit.status !== "cancelled");
@@ -81,8 +83,16 @@ function AdoptionCard({
           application,
           visits,
           pet.shelter.name,
-        )}
-      />
+        )}/>
+
+      <button
+          type="button"
+          onClick={() => onMessage(pet)}
+          aria-label={`Message shelter about ${pet.name}`}
+          className="min-h-[52px] cursor-pointer rounded-2xl border-2 border-ink bg-white px-6 font-semibold text-ink"
+        >
+          Message shelter
+      </button>
 
       <div className="flex flex-wrap gap-3">
         <Link
@@ -143,6 +153,7 @@ export default function Adoptions() {
   const { pets, loading: petsLoading, error: petsError } = usePets();
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState("");
+  const [messagingPet, setMessagingPet] = useState(null);
 
   const loading = appsLoading || petsLoading;
   const error = appsError || petsError || message;
@@ -214,6 +225,7 @@ export default function Adoptions() {
                 busy={busyId === application.id}
                 onCancel={cancelApplication}
                 onDemoStatus={changeStatus}
+                onMessage={setMessagingPet}
               />
             );
           })}
@@ -263,6 +275,12 @@ export default function Adoptions() {
             </section>
           )}
         </>
+      )}
+      {messagingPet && (
+        <MessageDrawer
+          pet={messagingPet}
+          onClose={() => setMessagingPet(null)}
+        />
       )}
     </PageCard>
   );
