@@ -5,6 +5,7 @@ import FavoritesProvider from "../context/FavoritesProvider";
 import ApplicationsProvider from "../context/ApplicationsProvider";
 import { AppointmentsProvider } from "../context/AppointmentsProvider";
 import NotificationsProvider from "../context/NotificationsProvider";
+import MessagesProvider from "../context/MessagesProvider";
 
 export default function AppLayout() {
   return (
@@ -15,7 +16,9 @@ export default function AppLayout() {
           <FavoritesProvider>
             <ApplicationsProvider>
               <AppointmentsProvider>
-                <Outlet />
+                <MessagesProvider>
+                  <Outlet />
+                </MessagesProvider>
               </AppointmentsProvider>
             </ApplicationsProvider>
           </FavoritesProvider>

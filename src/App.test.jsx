@@ -60,6 +60,9 @@ vi.mock("./hooks/useNotifications", () => ({
     reload: () => Promise.resolve(),
   }),
 }));
+vi.mock("./context/MessagesProvider", () => ({
+  default: ({ children }) => children,
+}));
 
 
 const application = (id, petId, status = "pending") => ({
